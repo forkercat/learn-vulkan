@@ -41,5 +41,5 @@ BraceWrapping:
 #
 BreakInheritanceList: BeforeColon
 BreakConstructorInitializers: BeforeColon
+PackConstructorInitializers: NextLineOnly
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
-
