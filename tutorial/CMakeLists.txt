@@ -1,0 +1,24 @@
+set(SRC_ROOT ${PROJECT_SOURCE_DIR}/tutorial)
+
+add_executable(tutorial)
+
+target_sources(tutorial
+PUBLIC
+	${SRC_ROOT}/hello_triangle.h
+PRIVATE
+	${SRC_ROOT}/hello_triangle.cpp
+	${SRC_ROOT}/main.cpp
+)
+
+target_link_libraries(tutorial
+PRIVATE
+	glfw
+	glm::glm
+	Vulkan::Vulkan
+	core
+)
+
+target_include_directories(tutorial
+PRIVATE
+	${PROJECT_SOURCE_DIR}
+)
