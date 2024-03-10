@@ -16,11 +16,19 @@ public:
 
 private:
 	void InitWindow();
+
 	void InitVulkan();
+	void CreateInstance();
+	void SetupDebugMessenger();
+
 	void MainLoop();
 	void Cleanup();
+
+	static std::vector<const char*> GetRequiredExtensions();
+	static bool CheckValidationLayerSupport();
 
 private:
 	GLFWwindow* mWindow;
 	VkInstance mInstance;
+	VkDebugUtilsMessengerEXT mDebugMessenger;
 };
