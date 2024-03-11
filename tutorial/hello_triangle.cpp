@@ -16,10 +16,7 @@ struct QueueFamilyIndices
 {
 	std::optional<U32> graphicsFamily;
 
-	bool IsComplete()
-	{
-		return graphicsFamily.has_value();
-	}
+	bool IsComplete() { return graphicsFamily.has_value(); }
 };
 
 #ifdef NDEBUG
@@ -149,6 +146,9 @@ std::vector<const char*> HelloTriangleApplication::GetRequiredExtensions()
 	// Additional settings for macOS, otherwise you would get VK_ERROR_INCOMPATIBLE_DRIVER.
 	extensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 
+	// Fixing the device error on macOS.
+	extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
 	return extensions;
 }
 
@@ -220,7 +220,10 @@ void HelloTriangleApplication::CreateLogicalDevice()
 	createInfo.queueCreateInfoCount = 1;
 	createInfo.pEnabledFeatures = &deviceFeatures;
 
-	createInfo.enabledExtensionCount = 0;
+	// Additional settings for macOS, otherwise you would get a validation error.
+	createInfo.enabledExtensionCount = 1;
+	const char* deviceExtension = "VK_KHR_portability_subset";
+	createInfo.ppEnabledExtensionNames = &deviceExtension;
 
 	if (kEnableValidationLayers)
 	{
@@ -383,8 +386,6 @@ QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device)
 
 		queueFamilyIndex++;
 	}
-
-
 
 	return indices;
 }
