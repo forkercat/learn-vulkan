@@ -20,9 +20,11 @@ private:
 	void InitVulkan();
 	void CreateInstance();
 	void SetupDebugMessenger();
+	void PickPhysicalDevice();
+	void CreateLogicalDevice();
 
 	void MainLoop();
-	void Cleanup();
+	void CleanUp();
 
 	static std::vector<const char*> GetRequiredExtensions();
 	static bool CheckValidationLayerSupport();
@@ -31,4 +33,7 @@ private:
 	GLFWwindow* mWindow;
 	VkInstance mInstance;
 	VkDebugUtilsMessengerEXT mDebugMessenger;
+	VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;	// Will be implicitly destroyed when VkInstance is destroyed.
+	VkDevice mDevice;
+	VkQueue mGraphicsQueue;
 };
