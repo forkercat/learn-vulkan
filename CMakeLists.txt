@@ -9,3 +9,4 @@ find_package(Vulkan REQUIRED)
 
 add_subdirectory(core)
 add_subdirectory(tutorial)
+add_subdirectory(playground)

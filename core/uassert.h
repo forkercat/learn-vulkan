@@ -9,8 +9,6 @@
 
 #include "logging.h"
 
-// #define ASSERT(x) assert(x)
-
 #define ASSERT(x, ...)        \
 	{                         \
 		if (!(x))             \
