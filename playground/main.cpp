@@ -9,23 +9,23 @@
 
 int main()
 {
-	LOG("hahah");
+	PRINT("hahah");
 
-	LOG("%s -> %s", "123", "456");
+	PRINT("%s -> %s", "123", "456");
 
 	std::string sb = "123";
 
-	LOG("------- %s", sb.c_str());
+	PRINT("------- %s", sb.c_str());
 
-	LOG(STR(123123));
+	PRINT(STR(123123));
 
 	WARN_IF(true, "Hello World! %s", "123");
 
-	LOG_IF(true, "Hello!!!! %d", 9999);
+	PRINT_IF(true, "Hello!!!! %d", 9999);
 
 	ERROR_IF(true, "Yes!!!!!! error!!!!!");
 
-	LOG("Cool");
+	PRINT("Cool");
 
 	return 0;
 }

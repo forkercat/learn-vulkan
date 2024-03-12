@@ -9,11 +9,15 @@
 
 #include "logging.h"
 
-#define ASSERT(x, ...)        \
-	{                         \
-		if (!(x))             \
-		{                     \
-			LOG(__VA_ARGS__); \
-			raise(SIGTRAP);   \
-		}                     \
-	}
+#define ASSERT(x, ...)          \
+	do                          \
+	{                           \
+		if (!(x))               \
+		{                       \
+			PRINT(__VA_ARGS__); \
+			raise(SIGTRAP);     \
+		}                       \
+	} while (0)
+
+#define ASSERT_EQ(x, y, ...) ASSERT(x == y, __VA_ARGS__)
+#define ASSERT_NEQ(x, y, ...) ASSERT(x != y, __VA_ARGS__)

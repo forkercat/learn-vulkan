@@ -9,6 +9,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+struct QueueFamilyIndices;
+
 class HelloTriangleApplication
 {
 public:
@@ -20,14 +22,18 @@ private:
 	void InitVulkan();
 	void CreateInstance();
 	void SetupDebugMessenger();
+	void CreateWindowSurface();
 	void PickPhysicalDevice();
-	void CreateLogicalDevice();
+	void CreateLogicalDeviceAndQueues();
 
 	void MainLoop();
 	void CleanUp();
 
-	static std::vector<const char*> GetRequiredExtensions();
+	static std::vector<const char*> GetRequiredInstanceExtensions();
 	static bool CheckValidationLayerSupport();
+
+	bool IsPhysicalDeviceSuitable(VkPhysicalDevice device);
+	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
 
 private:
 	GLFWwindow* mWindow;
@@ -36,4 +42,6 @@ private:
 	VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;	// Will be implicitly destroyed when VkInstance is destroyed.
 	VkDevice mDevice;
 	VkQueue mGraphicsQueue;
+	VkQueue mPresentQueue;
+	VkSurfaceKHR mSurface;
 };

@@ -11,15 +11,15 @@
 // 	printf(__VA_ARGS__);                        \
 // 	printf("\n")
 
-#define LOG(fmt, ...) printf("[%s:%d] INFO: " fmt "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define PRINT(fmt, ...) printf("[%s:%d] INFO: " fmt "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #define WARN(fmt, ...) printf("[%s:%d] WARN: " fmt "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #define ERROR(fmt, ...) printf("[%s:%d] ERROR: " fmt "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
 
-#define LOG_IF(exp, fmt, ...)        \
-	do                               \
-	{                                \
-		if (exp)                     \
-			LOG(fmt, ##__VA_ARGS__); \
+#define PRINT_IF(exp, fmt, ...)        \
+	do                                 \
+	{                                  \
+		if (exp)                       \
+			PRINT(fmt, ##__VA_ARGS__); \
 	} while (0)
 
 #define WARN_IF(exp, fmt, ...)        \
@@ -35,3 +35,5 @@
 		if (exp)                       \
 			ERROR(fmt, ##__VA_ARGS__); \
 	} while (0)
+
+#define NEWLINE(x) printf(x "\n")
