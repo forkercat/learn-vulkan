@@ -33,6 +33,7 @@ private:
 	void PickPhysicalDevice();
 	void CreateLogicalDeviceAndQueues();
 	void CreateSwapChain();
+	void CreateImageViews();
 
 	void MainLoop();
 	void CleanUp();
@@ -59,7 +60,8 @@ private:
 
 	// Swap chain
 	VkSwapchainKHR mSwapChain;
-	std::vector<VkImage> mSwapChainImages;	// Auto destroyed when the swap chain is cleaned up.
 	VkFormat mSwapChainImageFormat;
 	VkExtent2D mSwapChainExtent;
+	std::vector<VkImage> mSwapChainImages;	// Auto destroyed when the swap chain is cleaned up.
+	std::vector<VkImageView> mSwapChainImageViews;
 };
