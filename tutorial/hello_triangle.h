@@ -9,6 +9,13 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <vector>
+#include <iostream>
+#include <set>
+#include <vector>
+#include <limits>
+#include <algorithm>
+
 struct QueueFamilyIndices;
 
 class HelloTriangleApplication
@@ -25,6 +32,7 @@ private:
 	void CreateWindowSurface();
 	void PickPhysicalDevice();
 	void CreateLogicalDeviceAndQueues();
+	void CreateSwapChain();
 
 	void MainLoop();
 	void CleanUp();
@@ -35,13 +43,23 @@ private:
 	bool IsPhysicalDeviceSuitable(VkPhysicalDevice device);
 	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
 
+	static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+	static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+	static VkExtent2D ChooseSwapExtent(GLFWwindow* window, const VkSurfaceCapabilitiesKHR& capabilities);
+
 private:
 	GLFWwindow* mWindow;
 	VkInstance mInstance;
 	VkDebugUtilsMessengerEXT mDebugMessenger;
-	VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;	// Will be implicitly destroyed when VkInstance is destroyed.
+	VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;	// Auto destroyed when VkInstance is destroyed.
 	VkDevice mDevice;
 	VkQueue mGraphicsQueue;
 	VkQueue mPresentQueue;
 	VkSurfaceKHR mSurface;
+
+	// Swap chain
+	VkSwapchainKHR mSwapChain;
+	std::vector<VkImage> mSwapChainImages;	// Auto destroyed when the swap chain is cleaned up.
+	VkFormat mSwapChainImageFormat;
+	VkExtent2D mSwapChainExtent;
 };

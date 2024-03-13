@@ -9,10 +9,10 @@
 
 #include "logging.h"
 
-#define ASSERT(x, ...)          \
+#define ASSERT(exp, ...)        \
 	do                          \
 	{                           \
-		if (!(x))               \
+		if (!(exp))             \
 		{                       \
 			PRINT(__VA_ARGS__); \
 			raise(SIGTRAP);     \

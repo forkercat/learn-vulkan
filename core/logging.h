@@ -11,9 +11,9 @@
 // 	printf(__VA_ARGS__);                        \
 // 	printf("\n")
 
-#define PRINT(fmt, ...) printf("[%s:%d] INFO: " fmt "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define WARN(fmt, ...) printf("[%s:%d] WARN: " fmt "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define ERROR(fmt, ...) printf("[%s:%d] ERROR: " fmt "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define PRINT(fmt, ...) printf("[INFO] %s:%d - " fmt "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define WARN(fmt, ...) printf("[WARN] %s:%d - " fmt "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define ERROR(fmt, ...) printf("[ERROR] %s:%d - " fmt "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
 
 #define PRINT_IF(exp, fmt, ...)        \
 	do                                 \

@@ -4,10 +4,6 @@
 
 #include "hello_triangle.h"
 
-#include <iostream>
-#include <set>
-#include <vector>
-
 static const U32 kWidth = 800;
 static const U32 kHeight = 600;
 
@@ -95,6 +91,7 @@ void HelloTriangleApplication::InitVulkan()
 	CreateWindowSurface();
 	PickPhysicalDevice();
 	CreateLogicalDeviceAndQueues();
+	CreateSwapChain();
 }
 
 void HelloTriangleApplication::CreateInstance()
@@ -261,6 +258,129 @@ void HelloTriangleApplication::CreateLogicalDeviceAndQueues()
 	vkGetDeviceQueue(mDevice, queueFamilyData.presentFamily.value(), 0, &mPresentQueue);
 }
 
+void HelloTriangleApplication::CreateSwapChain()
+{
+	PRINT("Creating swap chain...");
+	SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(mPhysicalDevice, mSurface);
+
+	VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
+	VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
+	VkExtent2D extent2D = ChooseSwapExtent(mWindow, swapChainSupport.capabilities);
+
+	// It is recommended to request at least one more image than the minimum.
+	U32 imageCount = swapChainSupport.capabilities.minImageCount + 1;
+
+	if (swapChainSupport.capabilities.maxImageCount > 0)
+	{
+		imageCount = std::min(imageCount, swapChainSupport.capabilities.maxImageCount);
+	}
+
+	VkSwapchainCreateInfoKHR createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+	createInfo.surface = mSurface;
+	createInfo.minImageCount = imageCount;
+	createInfo.imageFormat = surfaceFormat.format;
+	createInfo.imageColorSpace = surfaceFormat.colorSpace;
+	createInfo.imageExtent = extent2D;
+	createInfo.imageArrayLayers = 1;
+	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+	// Specify how to handle swap chain images that will be used across multiple queue families.
+	// E.g. Drawing on the images in the swap chain from the graphics queue and then submitting
+	// them on the presentation queue.
+	QueueFamilyIndices familyIndices = FindQueueFamilies(mPhysicalDevice);
+	U32 queueFamilyIndices[] = { familyIndices.graphicsFamily.value(), familyIndices.presentFamily.value() };
+
+	if (familyIndices.graphicsFamily != familyIndices.presentFamily)
+	{
+		// Graphics and presentation queue families differ.
+		// Images should be used across multiple queue families without explicit ownership transfers.
+		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+		createInfo.queueFamilyIndexCount = 2;
+		createInfo.pQueueFamilyIndices = queueFamilyIndices;
+	}
+	else
+	{
+		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		createInfo.queueFamilyIndexCount = 0;	   // Optional
+		createInfo.pQueueFamilyIndices = nullptr;  // Optional
+	}
+
+	createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	createInfo.presentMode = presentMode;
+	createInfo.clipped = VK_TRUE;
+	createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+	VkResult result = vkCreateSwapchainKHR(mDevice, &createInfo, nullptr, &mSwapChain);
+	ASSERT_EQ(result, VK_SUCCESS, "Failed to create swap chain!");
+
+	// Retrieve images.
+	vkGetSwapchainImagesKHR(mDevice, mSwapChain, &imageCount, nullptr);
+	mSwapChainImages.resize(imageCount);
+	vkGetSwapchainImagesKHR(mDevice, mSwapChain, &imageCount, mSwapChainImages.data());
+
+	mSwapChainImageFormat = surfaceFormat.format;
+	mSwapChainExtent = extent2D;
+}
+
+VkSurfaceFormatKHR HelloTriangleApplication::ChooseSwapSurfaceFormat(
+	const std::vector<VkSurfaceFormatKHR>& availableFormats)
+{
+	for (const auto& availableFormat : availableFormats)
+	{
+		if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
+			availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+		{
+			return availableFormat;
+		}
+	}
+
+	ASSERT(!availableFormats.empty(), "Failed to pick available format!");
+	return availableFormats[0];
+}
+
+VkPresentModeKHR HelloTriangleApplication::ChooseSwapPresentMode(
+	const std::vector<VkPresentModeKHR>& availablePresentModes)
+{
+	for (const auto& availablePresentMode : availablePresentModes)
+	{
+		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+		{
+			return availablePresentMode;
+		}
+	}
+
+	return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkExtent2D HelloTriangleApplication::ChooseSwapExtent(GLFWwindow* window, const VkSurfaceCapabilitiesKHR& capabilities)
+{
+	if (capabilities.currentExtent.width != std::numeric_limits<U32>::max())
+	{
+		PRINT("Current extent: (%dx%d)", capabilities.currentExtent.width, capabilities.currentExtent.height);
+		return capabilities.currentExtent;
+	}
+
+	// Window manager allows us to change the bounds here.
+
+	int widthInPixel{}, heightInPixel{};
+	glfwGetFramebufferSize(window, &widthInPixel, &heightInPixel);
+	PRINT("GLFW framebuffer size: (%dx%d)", widthInPixel, heightInPixel);
+
+	VkExtent2D actualExtent = { static_cast<U32>(widthInPixel), static_cast<U32>(heightInPixel) };
+
+	actualExtent.width =
+		std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+	actualExtent.height =
+		std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+	PRINT("Image extent width:  [%d, %d]", capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+	PRINT("Image extent height: [%d, %d]", capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+	return actualExtent;
+}
+
 void HelloTriangleApplication::MainLoop()
 {
 	PRINT("Running main loop...");
@@ -272,7 +392,8 @@ void HelloTriangleApplication::MainLoop()
 
 void HelloTriangleApplication::CleanUp()
 {
-	PRINT("Clean up...");
+	PRINT("Cleaning up...");
+	vkDestroySwapchainKHR(mDevice, mSwapChain, nullptr);
 	vkDestroyDevice(mDevice, nullptr);
 
 	if (kEnableValidationLayers)
