@@ -26,16 +26,25 @@ public:
 private:
 	void InitWindow();
 	void InitVulkan();
+
+	// Instance, device & validation layers
 	void CreateInstance();
 	void SetupDebugMessenger();
 	void CreateWindowSurface();
 	void PickPhysicalDevice();
 	void CreateLogicalDeviceAndQueues();
-	void CreateSwapChain();
+
+	// Swapchain & pipeline
+	void CreateSwapchain();
 	void CreateImageViews();
 	void CreateRenderPass();
 	void CreateGraphicsPipeline();
 	void CreateFramebuffers();
+
+	// Commands
+	void CreateCommandPool();
+	void CreateCommandBuffer();
+	void RecordCommandBuffer(VkCommandBuffer commandBuffer, U32 imageIndex);
 
 	void MainLoop();
 	void CleanUp();
@@ -63,15 +72,19 @@ private:
 	VkSurfaceKHR mSurface;
 
 	// Swap chain
-	VkSwapchainKHR mSwapChain;
-	VkFormat mSwapChainImageFormat;
-	VkExtent2D mSwapChainExtent;
-	std::vector<VkImage> mSwapChainImages;	// Auto destroyed when the swap chain is cleaned up.
-	std::vector<VkImageView> mSwapChainImageViews;
-	std::vector<VkFramebuffer> mSwapChainFramebuffers;
+	VkSwapchainKHR mSwapchain;
+	VkFormat mSwapchainImageFormat;
+	VkExtent2D mSwapchainExtent;
+	std::vector<VkImage> mSwapchainImages;	// Auto destroyed when the swap chain is cleaned up.
+	std::vector<VkImageView> mSwapchainImageViews;
+	std::vector<VkFramebuffer> mSwapchainFramebuffers;
 
+	// Graphics pipeline
 	VkRenderPass mRenderPass;
 	VkPipelineLayout mPipelineLayout;
-
 	VkPipeline mGraphicsPipeline;
+
+	// Commands
+	VkCommandPool mCommandPool;
+	VkCommandBuffer mCommandBuffer;
 };

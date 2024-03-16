@@ -94,11 +94,14 @@ void HelloTriangleApplication::InitVulkan()
 	PickPhysicalDevice();
 	CreateLogicalDeviceAndQueues();
 
-	CreateSwapChain();
+	CreateSwapchain();
 	CreateImageViews();
 	CreateRenderPass();
 	CreateGraphicsPipeline();
 	CreateFramebuffers();
+
+	CreateCommandPool();
+	CreateCommandBuffer();
 }
 
 void HelloTriangleApplication::CreateInstance()
@@ -265,7 +268,7 @@ void HelloTriangleApplication::CreateLogicalDeviceAndQueues()
 	vkGetDeviceQueue(mDevice, queueFamilyData.presentFamily.value(), 0, &mPresentQueue);
 }
 
-void HelloTriangleApplication::CreateSwapChain()
+void HelloTriangleApplication::CreateSwapchain()
 {
 	PRINT("Creating swap chain...");
 	SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(mPhysicalDevice, mSurface);
@@ -319,29 +322,29 @@ void HelloTriangleApplication::CreateSwapChain()
 	createInfo.clipped = VK_TRUE;
 	createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-	VkResult result = vkCreateSwapchainKHR(mDevice, &createInfo, nullptr, &mSwapChain);
-	ASSERT_EQ(result, VK_SUCCESS, "Failed to create swap chain!");
+	VkResult result = vkCreateSwapchainKHR(mDevice, &createInfo, nullptr, &mSwapchain);
+	ASSERT_EQ(result, VK_SUCCESS, "Failed to create swapchain!");
 
 	// Retrieve images.
-	vkGetSwapchainImagesKHR(mDevice, mSwapChain, &imageCount, nullptr);
-	mSwapChainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(mDevice, mSwapChain, &imageCount, mSwapChainImages.data());
+	vkGetSwapchainImagesKHR(mDevice, mSwapchain, &imageCount, nullptr);
+	mSwapchainImages.resize(imageCount);
+	vkGetSwapchainImagesKHR(mDevice, mSwapchain, &imageCount, mSwapchainImages.data());
 
-	mSwapChainImageFormat = surfaceFormat.format;
-	mSwapChainExtent = extent2D;
+	mSwapchainImageFormat = surfaceFormat.format;
+	mSwapchainExtent = extent2D;
 }
 
 void HelloTriangleApplication::CreateImageViews()
 {
-	mSwapChainImageViews.resize(mSwapChainImages.size());
+	mSwapchainImageViews.resize(mSwapchainImages.size());
 
-	for (USize i = 0; i < mSwapChainImages.size(); i++)
+	for (USize i = 0; i < mSwapchainImages.size(); i++)
 	{
 		VkImageViewCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		createInfo.image = mSwapChainImages[i];
+		createInfo.image = mSwapchainImages[i];
 		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		createInfo.format = mSwapChainImageFormat;
+		createInfo.format = mSwapchainImageFormat;
 
 		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -354,8 +357,8 @@ void HelloTriangleApplication::CreateImageViews()
 		createInfo.subresourceRange.baseArrayLayer = 0;
 		createInfo.subresourceRange.layerCount = 1;
 
-		VkResult result = vkCreateImageView(mDevice, &createInfo, nullptr, &mSwapChainImageViews[i]);
-		ASSERT_EQ(result, VK_SUCCESS, "Failed to create image views!");
+		VkResult result = vkCreateImageView(mDevice, &createInfo, nullptr, &mSwapchainImageViews[i]);
+		ASSERT_EQ(result, VK_SUCCESS, "Failed to create image views for swapchain images!");
 	}
 }
 
@@ -420,8 +423,9 @@ void HelloTriangleApplication::CreateRenderPass()
 {
 	PRINT("Creating render pass...");
 
+	// Attachment: Load or store operations.
 	VkAttachmentDescription colorAttachment{};
-	colorAttachment.format = mSwapChainImageFormat;
+	colorAttachment.format = mSwapchainImageFormat;
 	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -491,14 +495,14 @@ void HelloTriangleApplication::CreateGraphicsPipeline()
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = (F32)mSwapChainExtent.width;
-	viewport.height = (F32)mSwapChainExtent.height;
+	viewport.width = (F32)mSwapchainExtent.width;
+	viewport.height = (F32)mSwapchainExtent.height;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	VkRect2D scissor{};
 	scissor.offset = { 0, 0 };
-	scissor.extent = mSwapChainExtent;
+	scissor.extent = mSwapchainExtent;
 
 	VkPipelineViewportStateCreateInfo viewportStateCreateInfo{};
 	viewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -623,25 +627,102 @@ VkShaderModule HelloTriangleApplication::CreateShaderModule(VkDevice device, con
 
 void HelloTriangleApplication::CreateFramebuffers()
 {
-	PRINT("Creating framebuffers...");
+	mSwapchainFramebuffers.resize(mSwapchainImageViews.size());
+	PRINT("Creating %zu framebuffers...", mSwapchainFramebuffers.size());
 
-	mSwapChainFramebuffers.resize(mSwapChainImageViews.size());
-
-	for (USize i = 0; i < mSwapChainImageViews.size(); i++)
+	for (USize i = 0; i < mSwapchainImageViews.size(); i++)
 	{
-		VkImageView attachmentImageViews[] = { mSwapChainImageViews[i] };
+		VkImageView attachmentImageViews[] = { mSwapchainImageViews[i] };
 		VkFramebufferCreateInfo framebufferCreateInfo{};
 		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebufferCreateInfo.renderPass = mRenderPass;
 		framebufferCreateInfo.attachmentCount = 1;
 		framebufferCreateInfo.pAttachments = attachmentImageViews;
-		framebufferCreateInfo.width = mSwapChainExtent.width;
-		framebufferCreateInfo.height = mSwapChainExtent.height;
+		framebufferCreateInfo.width = mSwapchainExtent.width;
+		framebufferCreateInfo.height = mSwapchainExtent.height;
 		framebufferCreateInfo.layers = 1;
 
-		VkResult result = vkCreateFramebuffer(mDevice, &framebufferCreateInfo, nullptr, &mSwapChainFramebuffers[i]);
+		VkResult result = vkCreateFramebuffer(mDevice, &framebufferCreateInfo, nullptr, &mSwapchainFramebuffers[i]);
 		ASSERT_EQ(result, VK_SUCCESS, "Failed to create framebuffer!");
 	}
+}
+
+void HelloTriangleApplication::CreateCommandPool()
+{
+	QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(mPhysicalDevice);
+
+	// We will be recording a command buffer every frame, so we want to be able to reset and
+	// rerecord over it.
+	VkCommandPoolCreateInfo poolCreateInfo{};
+	poolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	poolCreateInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+
+	// Command buffers are executed by submitting them on one of the device queues, e.g. graphics queue.
+	VkResult result = vkCreateCommandPool(mDevice, &poolCreateInfo, nullptr, &mCommandPool);
+	ASSERT_EQ(result, VK_SUCCESS, "Failed to create command pool!");
+}
+
+void HelloTriangleApplication::CreateCommandBuffer()
+{
+	VkCommandBufferAllocateInfo bufferAllocateInfo{};
+	bufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	bufferAllocateInfo.commandPool = mCommandPool;
+	bufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	bufferAllocateInfo.commandBufferCount = 1;
+
+	VkResult result = vkAllocateCommandBuffers(mDevice, &bufferAllocateInfo, &mCommandBuffer);
+	ASSERT_EQ(result, VK_SUCCESS, "Failed to create command buffer!");
+}
+
+void HelloTriangleApplication::RecordCommandBuffer(VkCommandBuffer commandBuffer, U32 imageIndex)
+{
+	PRINT("Recording in command buffer...");
+
+	// Begin command buffer.
+	VkCommandBufferBeginInfo commandBufferBeginInfo{};
+	commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	commandBufferBeginInfo.flags = 0;
+	commandBufferBeginInfo.pInheritanceInfo = nullptr;
+
+	VkResult result = vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo);
+	ASSERT_EQ(result, VK_SUCCESS, "Failed to begin recording command buffer!");
+
+	// Begin render pass.
+	VkRenderPassBeginInfo renderPassBeginInfo;
+	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassBeginInfo.renderPass = mRenderPass;
+	renderPassBeginInfo.framebuffer = mSwapchainFramebuffers[imageIndex];  // current
+	renderPassBeginInfo.renderArea.offset = { 0, 0 };
+	renderPassBeginInfo.renderArea.extent = mSwapchainExtent;
+	VkClearValue clearColor = { { { 0.0f, 0.0f, 0.0f, 1.0f } } };
+	renderPassBeginInfo.clearValueCount = 1;
+	renderPassBeginInfo.pClearValues = &clearColor;
+
+	vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	// Bind graphics pipeline.
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
+
+	VkViewport viewport{};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = static_cast<F32>(mSwapchainExtent.width);
+	viewport.height = static_cast<F32>(mSwapchainExtent.height);
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+	VkRect2D scissor{};
+	scissor.offset = { 0, 0 };
+	scissor.extent = mSwapchainExtent;
+	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+	vkCmdEndRenderPass(commandBuffer);
+	VkResult endResult = vkEndCommandBuffer(commandBuffer);
+	ASSERT_EQ(endResult, VK_SUCCESS, "Failed to end command buffer!");
 }
 
 void HelloTriangleApplication::MainLoop()
@@ -657,7 +738,9 @@ void HelloTriangleApplication::CleanUp()
 {
 	PRINT("Cleaning up...");
 
-	for (auto framebuffer : mSwapChainFramebuffers)
+	vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
+
+	for (auto framebuffer : mSwapchainFramebuffers)
 	{
 		vkDestroyFramebuffer(mDevice, framebuffer, nullptr);
 	}
@@ -666,12 +749,12 @@ void HelloTriangleApplication::CleanUp()
 	vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
 	vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
 
-	for (const auto& imageView : mSwapChainImageViews)
+	for (const auto& imageView : mSwapchainImageViews)
 	{
 		vkDestroyImageView(mDevice, imageView, nullptr);
 	}
 
-	vkDestroySwapchainKHR(mDevice, mSwapChain, nullptr);
+	vkDestroySwapchainKHR(mDevice, mSwapchain, nullptr);
 	vkDestroyDevice(mDevice, nullptr);
 
 	if (kEnableValidationLayers)
