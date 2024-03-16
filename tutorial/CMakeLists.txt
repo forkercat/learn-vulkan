@@ -5,6 +5,7 @@ add_executable(tutorial)
 target_sources(tutorial
 PUBLIC
 	${SRC_ROOT}/hello_triangle.h
+	${SRC_ROOT}/shader.h
 PRIVATE
 	${SRC_ROOT}/hello_triangle.cpp
 	${SRC_ROOT}/main.cpp

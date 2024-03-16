@@ -25,7 +25,6 @@ public:
 
 private:
 	void InitWindow();
-
 	void InitVulkan();
 	void CreateInstance();
 	void SetupDebugMessenger();
@@ -34,6 +33,7 @@ private:
 	void CreateLogicalDeviceAndQueues();
 	void CreateSwapChain();
 	void CreateImageViews();
+	void CreateGraphicsPipeline();
 
 	void MainLoop();
 	void CleanUp();
@@ -47,6 +47,8 @@ private:
 	static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 	static VkExtent2D ChooseSwapExtent(GLFWwindow* window, const VkSurfaceCapabilitiesKHR& capabilities);
+
+	static VkShaderModule CreateShaderModule(VkDevice device, const std::vector<char>& code);
 
 private:
 	GLFWwindow* mWindow;

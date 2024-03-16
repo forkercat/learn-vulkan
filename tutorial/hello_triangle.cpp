@@ -4,6 +4,8 @@
 
 #include "hello_triangle.h"
 
+#include "shader.h"
+
 static const U32 kWidth = 800;
 static const U32 kHeight = 600;
 
@@ -92,6 +94,8 @@ void HelloTriangleApplication::InitVulkan()
 	PickPhysicalDevice();
 	CreateLogicalDeviceAndQueues();
 	CreateSwapChain();
+	CreateImageViews();
+	CreateGraphicsPipeline();
 }
 
 void HelloTriangleApplication::CreateInstance()
@@ -407,6 +411,53 @@ VkExtent2D HelloTriangleApplication::ChooseSwapExtent(GLFWwindow* window, const 
 	PRINT("Image extent height: [%d, %d]", capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
 	return actualExtent;
+}
+
+void HelloTriangleApplication::CreateGraphicsPipeline()
+{
+	std::vector<char> vertexShaderCode = Shader::ReadFile("shaders/vert.spv");
+	std::vector<char> fragmentShaderCode = Shader::ReadFile("shaders/frag.spv");
+
+	// We can clean up the shader modules after the bytecode is complied to machine code or linked,
+	// which happens when the graphics pipeline is created.
+	VkShaderModule vertexShaderModule = CreateShaderModule(mDevice, vertexShaderCode);
+	VkShaderModule fragmentShaderModule = CreateShaderModule(mDevice, fragmentShaderCode);
+
+	VkPipelineShaderStageCreateInfo vertexShaderStageInfo{};
+	vertexShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vertexShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vertexShaderStageInfo.module = vertexShaderModule;
+	vertexShaderStageInfo.pName = "main";  // entry point
+
+	VkPipelineShaderStageCreateInfo fragmentShaderStageInfo{};
+	vertexShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vertexShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	vertexShaderStageInfo.module = fragmentShaderModule;
+	vertexShaderStageInfo.pName = "main";  // entry point
+
+	VkPipelineShaderStageCreateInfo shaderStages[] = { vertexShaderStageInfo, fragmentShaderStageInfo };
+
+	vkDestroyShaderModule(mDevice, fragmentShaderModule, nullptr);
+	vkDestroyShaderModule(mDevice, vertexShaderModule, nullptr);
+}
+
+VkShaderModule HelloTriangleApplication::CreateShaderModule(VkDevice device, const std::vector<char>& code)
+{
+	ASSERT(!code.empty(), "Failed to create a shader module for empty code.");
+
+	VkShaderModuleCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	createInfo.codeSize = code.size();
+
+	// Alignment: The allocator of std::vector already ensures that the data satisfies the worst case alignment
+	// requirements.
+	createInfo.pCode = reinterpret_cast<const U32*>(code.data());
+
+	VkShaderModule shaderModule;
+	VkResult result = vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule);
+	ASSERT_EQ(result, VK_SUCCESS, "Failed to create shader module!");
+
+	return shaderModule;
 }
 
 void HelloTriangleApplication::MainLoop()
