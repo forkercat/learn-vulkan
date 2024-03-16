@@ -35,6 +35,7 @@ private:
 	void CreateImageViews();
 	void CreateRenderPass();
 	void CreateGraphicsPipeline();
+	void CreateFramebuffers();
 
 	void MainLoop();
 	void CleanUp();
@@ -67,6 +68,7 @@ private:
 	VkExtent2D mSwapChainExtent;
 	std::vector<VkImage> mSwapChainImages;	// Auto destroyed when the swap chain is cleaned up.
 	std::vector<VkImageView> mSwapChainImageViews;
+	std::vector<VkFramebuffer> mSwapChainFramebuffers;
 
 	VkRenderPass mRenderPass;
 	VkPipelineLayout mPipelineLayout;

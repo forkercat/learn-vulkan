@@ -93,10 +93,12 @@ void HelloTriangleApplication::InitVulkan()
 	CreateWindowSurface();
 	PickPhysicalDevice();
 	CreateLogicalDeviceAndQueues();
+
 	CreateSwapChain();
 	CreateImageViews();
 	CreateRenderPass();
 	CreateGraphicsPipeline();
+	CreateFramebuffers();
 }
 
 void HelloTriangleApplication::CreateInstance()
@@ -416,6 +418,8 @@ VkExtent2D HelloTriangleApplication::ChooseSwapExtent(GLFWwindow* window, const 
 
 void HelloTriangleApplication::CreateRenderPass()
 {
+	PRINT("Creating render pass...");
+
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = mSwapChainImageFormat;
 	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -450,6 +454,8 @@ void HelloTriangleApplication::CreateRenderPass()
 
 void HelloTriangleApplication::CreateGraphicsPipeline()
 {
+	PRINT("Creating graphics pipeline...");
+
 	// Shader modules
 	std::vector<char> vertexShaderCode = Shader::ReadFile("shaders/vert.spv");
 	std::vector<char> fragmentShaderCode = Shader::ReadFile("shaders/frag.spv");
@@ -469,7 +475,7 @@ void HelloTriangleApplication::CreateGraphicsPipeline()
 	fragmentShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	fragmentShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 	fragmentShaderStageInfo.module = fragmentShaderModule;
-	fragmentShaderStageInfo.pName = "main";  // entry point
+	fragmentShaderStageInfo.pName = "main";	 // entry point
 
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertexShaderStageInfo, fragmentShaderStageInfo };
 
@@ -587,7 +593,8 @@ void HelloTriangleApplication::CreateGraphicsPipeline()
 	pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;	 // Optional
 	pipelineCreateInfo.basePipelineIndex = -1;				 // Optional
 
-	VkResult result = vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &mGraphicsPipeline);
+	VkResult result =
+		vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &mGraphicsPipeline);
 	ASSERT_EQ(result, VK_SUCCESS, "Failed to create graphics pipeline!");
 
 	// Cleanup
@@ -614,6 +621,29 @@ VkShaderModule HelloTriangleApplication::CreateShaderModule(VkDevice device, con
 	return shaderModule;
 }
 
+void HelloTriangleApplication::CreateFramebuffers()
+{
+	PRINT("Creating framebuffers...");
+
+	mSwapChainFramebuffers.resize(mSwapChainImageViews.size());
+
+	for (USize i = 0; i < mSwapChainImageViews.size(); i++)
+	{
+		VkImageView attachmentImageViews[] = { mSwapChainImageViews[i] };
+		VkFramebufferCreateInfo framebufferCreateInfo{};
+		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferCreateInfo.renderPass = mRenderPass;
+		framebufferCreateInfo.attachmentCount = 1;
+		framebufferCreateInfo.pAttachments = attachmentImageViews;
+		framebufferCreateInfo.width = mSwapChainExtent.width;
+		framebufferCreateInfo.height = mSwapChainExtent.height;
+		framebufferCreateInfo.layers = 1;
+
+		VkResult result = vkCreateFramebuffer(mDevice, &framebufferCreateInfo, nullptr, &mSwapChainFramebuffers[i]);
+		ASSERT_EQ(result, VK_SUCCESS, "Failed to create framebuffer!");
+	}
+}
+
 void HelloTriangleApplication::MainLoop()
 {
 	PRINT("Running main loop...");
@@ -626,6 +656,11 @@ void HelloTriangleApplication::MainLoop()
 void HelloTriangleApplication::CleanUp()
 {
 	PRINT("Cleaning up...");
+
+	for (auto framebuffer : mSwapChainFramebuffers)
+	{
+		vkDestroyFramebuffer(mDevice, framebuffer, nullptr);
+	}
 
 	vkDestroyPipeline(mDevice, mGraphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
