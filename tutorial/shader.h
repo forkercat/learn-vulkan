@@ -16,7 +16,7 @@ class Shader
 public:
 	static std::vector<char> ReadFile(const std::string& filename)
 	{
-		std::ifstream file(filename, std::ios::ate || std::ios::binary);
+		std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
 		ASSERT(file.is_open(), "Failed to open shader file!");
 
@@ -26,7 +26,7 @@ public:
 		file.seekg(0);
 		file.read(buffer.data(), fileSize);
 
-		PRINT("Loaded shader %s (%u bytes)", filename.c_str(), fileSize);
+		PRINT("Loaded shader %s (%zu bytes)", filename.c_str(), fileSize);
 
 		file.close();
 

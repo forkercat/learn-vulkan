@@ -33,6 +33,7 @@ private:
 	void CreateLogicalDeviceAndQueues();
 	void CreateSwapChain();
 	void CreateImageViews();
+	void CreateRenderPass();
 	void CreateGraphicsPipeline();
 
 	void MainLoop();
@@ -66,4 +67,9 @@ private:
 	VkExtent2D mSwapChainExtent;
 	std::vector<VkImage> mSwapChainImages;	// Auto destroyed when the swap chain is cleaned up.
 	std::vector<VkImageView> mSwapChainImageViews;
+
+	VkRenderPass mRenderPass;
+	VkPipelineLayout mPipelineLayout;
+
+	VkPipeline mGraphicsPipeline;
 };
