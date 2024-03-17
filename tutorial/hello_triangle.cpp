@@ -101,7 +101,7 @@ void HelloTriangleApplication::InitVulkan()
 	CreateFramebuffers();
 
 	CreateCommandPool();
-	CreateCommandBuffer();
+	CreateCommandBuffers();
 
 	CreateSyncObjects();
 }
@@ -680,16 +680,18 @@ void HelloTriangleApplication::CreateCommandPool()
 	ASSERT_EQ(result, VK_SUCCESS, "Failed to create command pool!");
 }
 
-void HelloTriangleApplication::CreateCommandBuffer()
+void HelloTriangleApplication::CreateCommandBuffers()
 {
+	mCommandBuffers.resize(kMaxFramesInFlight);
+
 	VkCommandBufferAllocateInfo bufferAllocateInfo{};
 	bufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	bufferAllocateInfo.commandPool = mCommandPool;
 	bufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	bufferAllocateInfo.commandBufferCount = 1;
+	bufferAllocateInfo.commandBufferCount = (U32)mCommandBuffers.size();
 
-	VkResult result = vkAllocateCommandBuffers(mDevice, &bufferAllocateInfo, &mCommandBuffer);
-	ASSERT_EQ(result, VK_SUCCESS, "Failed to create command buffer!");
+	VkResult result = vkAllocateCommandBuffers(mDevice, &bufferAllocateInfo, mCommandBuffers.data());
+	ASSERT_EQ(result, VK_SUCCESS, "Failed to create command buffers!");
 }
 
 void HelloTriangleApplication::RecordCommandBuffer(VkCommandBuffer commandBuffer, U32 imageIndex)
@@ -742,6 +744,10 @@ void HelloTriangleApplication::RecordCommandBuffer(VkCommandBuffer commandBuffer
 
 void HelloTriangleApplication::CreateSyncObjects()
 {
+	mImageAvailableSemaphores.resize(kMaxFramesInFlight);
+	mRenderFinishedSemaphores.resize(kMaxFramesInFlight);
+	mInFlightFences.resize(kMaxFramesInFlight);
+
 	VkSemaphoreCreateInfo semaphoreCreateInfo{};
 	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -749,12 +755,15 @@ void HelloTriangleApplication::CreateSyncObjects()
 	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-	VkResult result1 = vkCreateSemaphore(mDevice, &semaphoreCreateInfo, nullptr, &mImageAvailableSemaphore);
-	VkResult result2 = vkCreateSemaphore(mDevice, &semaphoreCreateInfo, nullptr, &mRenderFinishedSemaphore);
-	VkResult result3 = vkCreateFence(mDevice, &fenceCreateInfo, nullptr, &mInFlightFence);
+	for (USize i = 0; i < kMaxFramesInFlight; i++)
+	{
+		VkResult result1 = vkCreateSemaphore(mDevice, &semaphoreCreateInfo, nullptr, &mImageAvailableSemaphores[i]);
+		VkResult result2 = vkCreateSemaphore(mDevice, &semaphoreCreateInfo, nullptr, &mRenderFinishedSemaphores[i]);
+		VkResult result3 = vkCreateFence(mDevice, &fenceCreateInfo, nullptr, &mInFlightFences[i]);
 
-	ASSERT(result1 == VK_SUCCESS && result2 == VK_SUCCESS && result3 == VK_SUCCESS,
-		   "Failed to create synchronization objects!");
+		ASSERT(result1 == VK_SUCCESS && result2 == VK_SUCCESS && result3 == VK_SUCCESS,
+			   "Failed to create synchronization objects for a frame!");
+	}
 }
 
 void HelloTriangleApplication::DrawFrame()
@@ -770,38 +779,39 @@ void HelloTriangleApplication::DrawFrame()
 	// Fence: Host (CPU) waits for the previous frame to finish to draw the next frame.
 
 	// 1. Wait on host for the previous frame to finish.
-	vkWaitForFences(mDevice, 1, &mInFlightFence, VK_TRUE, UINT64_MAX);	// Disable timeout
-	vkResetFences(mDevice, 1, &mInFlightFence);
+	vkWaitForFences(mDevice, 1, &mInFlightFences[mCurrentFrame], VK_TRUE, UINT64_MAX);	// Disable timeout
+	vkResetFences(mDevice, 1, &mInFlightFences[mCurrentFrame]);
 
 	// 2. Get the next available swapchain image and signal the semaphore.
 	U32 imageIndex;
-	vkAcquireNextImageKHR(mDevice, mSwapchain, UINT64_MAX, mImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+	vkAcquireNextImageKHR(mDevice, mSwapchain, UINT64_MAX, mImageAvailableSemaphores[mCurrentFrame], VK_NULL_HANDLE,
+						  &imageIndex);
 
 	// 3. Record commands (begin buffer, begin render pass, bind pipeline, draw)
-	vkResetCommandBuffer(mCommandBuffer, 0);
-	RecordCommandBuffer(mCommandBuffer, imageIndex);
+	vkResetCommandBuffer(mCommandBuffers[mCurrentFrame], 0);
+	RecordCommandBuffer(mCommandBuffers[mCurrentFrame], imageIndex);
 
 	// 4. Submit command buffer to graphics queue.
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &mCommandBuffer;
+	submitInfo.pCommandBuffers = &mCommandBuffers[mCurrentFrame];
 
 	// Semaphores to wait (on GPU) before command execution.
-	VkSemaphore waitSemaphores[] = { mImageAvailableSemaphore };
+	VkSemaphore waitSemaphores[] = { mImageAvailableSemaphores[mCurrentFrame] };
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 
 	// Semaphores to signal (on GPU) after command execution.
-	VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphore };
+	VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphores[mCurrentFrame] };
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
 	// When the command buffer execution is done, it signals that the command buffer can be reused.
-	VkResult result = vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, mInFlightFence);
-	ASSERT_EQ(result, VK_SUCCESS, "Failed to submit command buffer to graphics queue!");
+	VkResult submitResult = vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, mInFlightFences[mCurrentFrame]);
+	ASSERT_EQ(submitResult, VK_SUCCESS, "Failed to submit command buffer to graphics queue!");
 
 	// 5. Presentation (submitting the result back to swapchain)
 	VkPresentInfoKHR presentInfo{};
@@ -815,12 +825,15 @@ void HelloTriangleApplication::DrawFrame()
 	presentInfo.pImageIndices = &imageIndex;
 
 	vkQueuePresentKHR(mPresentQueue, &presentInfo);
+
+	// Advance the current frame index.
+	mCurrentFrame = (mCurrentFrame + 1) % kMaxFramesInFlight;
 }
 
 void HelloTriangleApplication::MainLoop()
 {
 	PRINT("Running main loop...");
-	
+
 	while (!glfwWindowShouldClose(mWindow))
 	{
 		glfwPollEvents();
@@ -836,11 +849,14 @@ void HelloTriangleApplication::CleanUp()
 {
 	PRINT("Cleaning up...");
 
-	vkDestroySemaphore(mDevice, mImageAvailableSemaphore, nullptr);
-	vkDestroySemaphore(mDevice, mRenderFinishedSemaphore, nullptr);
-	vkDestroyFence(mDevice, mInFlightFence, nullptr);
+	for (USize i = 0; i < kMaxFramesInFlight; i++)
+	{
+		vkDestroySemaphore(mDevice, mImageAvailableSemaphores[i], nullptr);
+		vkDestroySemaphore(mDevice, mRenderFinishedSemaphores[i], nullptr);
+		vkDestroyFence(mDevice, mInFlightFences[i], nullptr);
+	}
 
-	vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
+	vkDestroyCommandPool(mDevice, mCommandPool, nullptr);  // Also frees command buffers
 
 	for (auto framebuffer : mSwapchainFramebuffers)
 	{

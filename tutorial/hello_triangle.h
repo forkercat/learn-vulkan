@@ -43,7 +43,7 @@ private:
 
 	// Command buffer
 	void CreateCommandPool();
-	void CreateCommandBuffer();
+	void CreateCommandBuffers();
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, U32 imageIndex);
 
 	// Synchronization
@@ -92,10 +92,20 @@ private:
 
 	// Commands
 	VkCommandPool mCommandPool;
-	VkCommandBuffer mCommandBuffer;
+	std::vector<VkCommandBuffer> mCommandBuffers;
 
 	// Synchronization
-	VkSemaphore mImageAvailableSemaphore;
-	VkSemaphore mRenderFinishedSemaphore;
-	VkFence mInFlightFence;
+	std::vector<VkSemaphore> mImageAvailableSemaphores;
+	std::vector<VkSemaphore> mRenderFinishedSemaphores;
+	std::vector<VkFence> mInFlightFences;
+
+	// Keep track of the current frame to use the right sync objects. Having multiple frames in flight enables us start
+	// rendering the next, with rendering of one frame to not interfere with the recording of the next.
+	// Why 2 frames? Don't want the CPU to get too far ahead of the GPU.
+	// The CPU and the GPU can be working on their own tasks at the same time.
+	// -----------------------------------------------------------------------
+	// Records 1st frame on CPU -> Renders 1st frame on GPU -> Renders 2nd frame on GPU
+	//                          -> Records 2nd frame on CPU -> Records 1st frame on CPU
+	U32 mCurrentFrame = 0;
+	static const U32 kMaxFramesInFlight = 2;
 };
