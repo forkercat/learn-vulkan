@@ -41,10 +41,16 @@ private:
 	void CreateGraphicsPipeline();
 	void CreateFramebuffers();
 
-	// Commands
+	// Command buffer
 	void CreateCommandPool();
 	void CreateCommandBuffer();
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, U32 imageIndex);
+
+	// Synchronization
+	void CreateSyncObjects();
+
+	// Draw
+	void DrawFrame();
 
 	void MainLoop();
 	void CleanUp();
@@ -87,4 +93,9 @@ private:
 	// Commands
 	VkCommandPool mCommandPool;
 	VkCommandBuffer mCommandBuffer;
+
+	// Synchronization
+	VkSemaphore mImageAvailableSemaphore;
+	VkSemaphore mRenderFinishedSemaphore;
+	VkFence mInFlightFence;
 };

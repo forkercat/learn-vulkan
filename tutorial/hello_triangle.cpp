@@ -21,7 +21,7 @@ struct QueueFamilyIndices
 	bool IsComplete() { return graphicsFamily.has_value() && presentFamily.has_value(); }
 };
 
-struct SwapChainSupportDetails
+struct SwapchainSupportDetails
 {
 	VkSurfaceCapabilitiesKHR capabilities;
 	std::vector<VkSurfaceFormatKHR> formats;
@@ -49,7 +49,7 @@ void DestroyDebugUtilsMessengerEXT(VkInstance, VkDebugUtilsMessengerEXT, const V
 void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT&);
 
 bool CheckDeviceExtensionSupport(VkPhysicalDevice);
-SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice, VkSurfaceKHR);
+SwapchainSupportDetails QuerySwapChainSupport(VkPhysicalDevice, VkSurfaceKHR);
 
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -102,6 +102,8 @@ void HelloTriangleApplication::InitVulkan()
 
 	CreateCommandPool();
 	CreateCommandBuffer();
+
+	CreateSyncObjects();
 }
 
 void HelloTriangleApplication::CreateInstance()
@@ -271,7 +273,7 @@ void HelloTriangleApplication::CreateLogicalDeviceAndQueues()
 void HelloTriangleApplication::CreateSwapchain()
 {
 	PRINT("Creating swap chain...");
-	SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(mPhysicalDevice, mSurface);
+	SwapchainSupportDetails swapChainSupport = QuerySwapChainSupport(mPhysicalDevice, mSurface);
 
 	VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
 	VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
@@ -451,6 +453,21 @@ void HelloTriangleApplication::CreateRenderPass()
 	renderPassCreateInfo.pAttachments = &colorAttachment;
 	renderPassCreateInfo.subpassCount = 1;
 	renderPassCreateInfo.pSubpasses = &subpassDescription;
+
+	// Prevent image layout transition from happening until it's actually allowed,
+	// when we want to start writing colors to it.
+	// This ensures that the render passes don't begin until the image is available.
+	VkSubpassDependency dependency{};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	// Operations that the subpass wait on. Wait for the swapchain to finish reading from the image.
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask = 0;
+	// Operations on the subpass that are waiting (i.e. writing to color attachment).
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	renderPassCreateInfo.dependencyCount = 1;
+	renderPassCreateInfo.pDependencies = &dependency;
 
 	VkResult result = vkCreateRenderPass(mDevice, &renderPassCreateInfo, nullptr, &mRenderPass);
 	ASSERT_EQ(result, VK_SUCCESS, "Failed to create render pass!");
@@ -652,7 +669,7 @@ void HelloTriangleApplication::CreateCommandPool()
 	QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(mPhysicalDevice);
 
 	// We will be recording a command buffer every frame, so we want to be able to reset and
-	// rerecord over it.
+	// record over it again.
 	VkCommandPoolCreateInfo poolCreateInfo{};
 	poolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	poolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -677,19 +694,17 @@ void HelloTriangleApplication::CreateCommandBuffer()
 
 void HelloTriangleApplication::RecordCommandBuffer(VkCommandBuffer commandBuffer, U32 imageIndex)
 {
-	PRINT("Recording in command buffer...");
-
 	// Begin command buffer.
 	VkCommandBufferBeginInfo commandBufferBeginInfo{};
 	commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	commandBufferBeginInfo.flags = 0;
 	commandBufferBeginInfo.pInheritanceInfo = nullptr;
 
-	VkResult result = vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo);
-	ASSERT_EQ(result, VK_SUCCESS, "Failed to begin recording command buffer!");
+	VkResult beginResult = vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo);
+	ASSERT_EQ(beginResult, VK_SUCCESS, "Failed to begin recording command buffer!");
 
 	// Begin render pass.
-	VkRenderPassBeginInfo renderPassBeginInfo;
+	VkRenderPassBeginInfo renderPassBeginInfo{};
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassBeginInfo.renderPass = mRenderPass;
 	renderPassBeginInfo.framebuffer = mSwapchainFramebuffers[imageIndex];  // current
@@ -725,18 +740,105 @@ void HelloTriangleApplication::RecordCommandBuffer(VkCommandBuffer commandBuffer
 	ASSERT_EQ(endResult, VK_SUCCESS, "Failed to end command buffer!");
 }
 
+void HelloTriangleApplication::CreateSyncObjects()
+{
+	VkSemaphoreCreateInfo semaphoreCreateInfo{};
+	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	VkFenceCreateInfo fenceCreateInfo{};
+	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	VkResult result1 = vkCreateSemaphore(mDevice, &semaphoreCreateInfo, nullptr, &mImageAvailableSemaphore);
+	VkResult result2 = vkCreateSemaphore(mDevice, &semaphoreCreateInfo, nullptr, &mRenderFinishedSemaphore);
+	VkResult result3 = vkCreateFence(mDevice, &fenceCreateInfo, nullptr, &mInFlightFence);
+
+	ASSERT(result1 == VK_SUCCESS && result2 == VK_SUCCESS && result3 == VK_SUCCESS,
+		   "Failed to create synchronization objects!");
+}
+
+void HelloTriangleApplication::DrawFrame()
+{
+	// 1. Wait for the previous frame to finish.
+	// 2. Acquire an image from the swapchain.
+	// 3. Record a command buffer which draws the scene onto that image.
+	// 4. Submit the command buffer to the graphics queue.
+	// 5. Present the swapchain image.
+
+	// Vulkan APIs for the above operations are asynchronous. All functions in DrawFrame are async.
+	// Semaphore: Swapchain operations on GPU wait for the previous frame to finish.
+	// Fence: Host (CPU) waits for the previous frame to finish to draw the next frame.
+
+	// 1. Wait on host for the previous frame to finish.
+	vkWaitForFences(mDevice, 1, &mInFlightFence, VK_TRUE, UINT64_MAX);	// Disable timeout
+	vkResetFences(mDevice, 1, &mInFlightFence);
+
+	// 2. Get the next available swapchain image and signal the semaphore.
+	U32 imageIndex;
+	vkAcquireNextImageKHR(mDevice, mSwapchain, UINT64_MAX, mImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+	// 3. Record commands (begin buffer, begin render pass, bind pipeline, draw)
+	vkResetCommandBuffer(mCommandBuffer, 0);
+	RecordCommandBuffer(mCommandBuffer, imageIndex);
+
+	// 4. Submit command buffer to graphics queue.
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &mCommandBuffer;
+
+	// Semaphores to wait (on GPU) before command execution.
+	VkSemaphore waitSemaphores[] = { mImageAvailableSemaphore };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+
+	// Semaphores to signal (on GPU) after command execution.
+	VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphore };
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+
+	// When the command buffer execution is done, it signals that the command buffer can be reused.
+	VkResult result = vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, mInFlightFence);
+	ASSERT_EQ(result, VK_SUCCESS, "Failed to submit command buffer to graphics queue!");
+
+	// 5. Presentation (submitting the result back to swapchain)
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = signalSemaphores;	 // RenderedFinishedSemaphore
+
+	VkSwapchainKHR swapchains[] = { mSwapchain };
+	presentInfo.swapchainCount = 1;	 // Always be a single one.
+	presentInfo.pSwapchains = swapchains;
+	presentInfo.pImageIndices = &imageIndex;
+
+	vkQueuePresentKHR(mPresentQueue, &presentInfo);
+}
+
 void HelloTriangleApplication::MainLoop()
 {
 	PRINT("Running main loop...");
+	
 	while (!glfwWindowShouldClose(mWindow))
 	{
 		glfwPollEvents();
+		DrawFrame();
 	}
+
+	// Wait for asynchronous drawing and presentation operations that may still be going on.
+	// You can also use vkQueueWaitIdle.
+	vkDeviceWaitIdle(mDevice);
 }
 
 void HelloTriangleApplication::CleanUp()
 {
 	PRINT("Cleaning up...");
+
+	vkDestroySemaphore(mDevice, mImageAvailableSemaphore, nullptr);
+	vkDestroySemaphore(mDevice, mRenderFinishedSemaphore, nullptr);
+	vkDestroyFence(mDevice, mInFlightFence, nullptr);
 
 	vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
 
@@ -856,7 +958,7 @@ bool HelloTriangleApplication::IsPhysicalDeviceSuitable(VkPhysicalDevice device)
 	bool swapChainAdequate = false;
 	if (extensionsSupported)
 	{
-		SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(device, mSurface);
+		SwapchainSupportDetails swapChainSupport = QuerySwapChainSupport(device, mSurface);
 		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 	}
 
@@ -922,9 +1024,9 @@ bool CheckDeviceExtensionSupport(VkPhysicalDevice device)
 }
 
 // Device and surface are needed as they are core components of swap chain.
-SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
+SwapchainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
 {
-	SwapChainSupportDetails details{};
+	SwapchainSupportDetails details{};
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
 
 	U32 formatCount{};
