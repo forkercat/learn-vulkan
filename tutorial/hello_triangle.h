@@ -35,6 +35,9 @@ private:
 	void CreateLogicalDeviceAndQueues();
 
 	// Swapchain & pipeline
+	void RecreateSwapchain();
+	void CleanUpSwapchain();
+
 	void CreateSwapchain();
 	void CreateImageViews();
 	void CreateRenderPass();
@@ -66,6 +69,8 @@ private:
 	static VkExtent2D ChooseSwapExtent(GLFWwindow* window, const VkSurfaceCapabilitiesKHR& capabilities);
 
 	static VkShaderModule CreateShaderModule(VkDevice device, const std::vector<char>& code);
+
+	static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
 
 private:
 	GLFWwindow* mWindow;
@@ -108,4 +113,7 @@ private:
 	//                          -> Records 2nd frame on CPU -> Records 1st frame on CPU
 	U32 mCurrentFrame = 0;
 	static const U32 kMaxFramesInFlight = 2;
+
+	// Handling resizes explicitly for drivers/platforms that cannot trigger VK_ERROR_OUT_OF_DATE_KHR.
+	bool mFramebufferResized = false;
 };
