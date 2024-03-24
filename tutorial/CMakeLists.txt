@@ -14,7 +14,6 @@ PRIVATE
 target_link_libraries(tutorial
 PRIVATE
 	glfw
-	glm::glm
 	Vulkan::Vulkan
 	core
 )
