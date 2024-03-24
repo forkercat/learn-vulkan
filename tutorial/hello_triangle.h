@@ -66,6 +66,12 @@ private:
 	void CreateCommandBuffers();
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, U32 imageIndex);
 
+	/// Vertex buffer
+	void CreateVertexBuffer();
+	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags,
+					  VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
 	/// Synchronization
 	void CreateSyncObjects();
 
@@ -80,6 +86,8 @@ private:
 
 	bool IsPhysicalDeviceSuitable(VkPhysicalDevice device);
 	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
+
+	U32 FindMemoryType(U32 typeFilter, VkMemoryPropertyFlags propertyFlags);
 
 	static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 	static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
@@ -114,6 +122,8 @@ private:
 
 	// Commands
 	VkCommandPool mCommandPool;
+	VkBuffer mVertexBuffer;
+	VkDeviceMemory mVertexBufferMemory;
 	std::vector<VkCommandBuffer> mCommandBuffers;
 
 	// Synchronization

@@ -140,6 +140,7 @@ void HelloTriangleApplication::InitVulkan()
 	CreateFramebuffers();
 
 	CreateCommandPool();
+	CreateVertexBuffer();
 	CreateCommandBuffers();
 
 	CreateSyncObjects();
@@ -817,11 +818,119 @@ void HelloTriangleApplication::RecordCommandBuffer(VkCommandBuffer commandBuffer
 	scissor.extent = mSwapchainExtent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+	// Bind vertex buffer.
+	VkBuffer vertexBuffers[] = { mVertexBuffer };
+	VkDeviceSize offsets[] = { 0 };
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+	vkCmdDraw(commandBuffer, static_cast<U32>(kVertexData.size()), 1, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);
 	VkResult endResult = vkEndCommandBuffer(commandBuffer);
 	ASSERT_EQ(endResult, VK_SUCCESS, "Failed to end command buffer!");
+}
+
+void HelloTriangleApplication::CreateVertexBuffer()
+{
+	// We can use VERTEX_BUFFER_BIT for our vertex buffer, but it is not optimal for GPU to read data from.
+	// The most optimal one for the GPU has the DEVICE_LOCAL property bit (meaning we cannot use vkMapMemory) and is
+	// usually not accessible by the CPU.
+	// So, we need to create a staging buffer as a middle man for transferring the data.
+	VkDeviceSize bufferSize = sizeof(Vertex) * kVertexData.size();
+
+	// Create the staging buffer.
+	// SRC_BIT: Buffer can be used as source in a memory operation.
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+				 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer,
+				 stagingBufferMemory);
+
+	// Copying to GPU (memory mapping).
+	void* dstData;
+	vkMapMemory(mDevice, stagingBufferMemory, 0, bufferSize, 0, &dstData);
+	// Unfortunately the driver may not immediately copy the data into the buffer memory, for example because of
+	// caching. It is also possible that writes to the buffer are not visible in the mapped memory yet.
+	// This can be resolved by setting the COHERENT bit like we did above.
+	memcpy(dstData, kVertexData.data(), (USize)bufferSize);
+	vkUnmapMemory(mDevice, stagingBufferMemory);
+
+	// Create the vertex buffer.
+	CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+				 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mVertexBuffer, mVertexBufferMemory);
+
+	CopyBuffer(stagingBuffer, mVertexBuffer, bufferSize);
+
+	vkDestroyBuffer(mDevice, stagingBuffer, nullptr);
+	vkFreeMemory(mDevice, stagingBufferMemory, nullptr);
+}
+
+void HelloTriangleApplication::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags,
+											VkMemoryPropertyFlags propertyFlags, VkBuffer& buffer,
+											VkDeviceMemory& bufferMemory)
+{
+	// Buffer creation
+	VkBufferCreateInfo bufferInfo{};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = size;
+	bufferInfo.usage = usageFlags;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;	 // only used by the graphics queue
+
+	VkResult bufferResult = vkCreateBuffer(mDevice, &bufferInfo, nullptr, &buffer);
+	ASSERT_EQ(bufferResult, VK_SUCCESS, "Failed to create vertex buffer!");
+
+	// Memory allocation
+	VkMemoryRequirements memoryRequirements;
+	vkGetBufferMemoryRequirements(mDevice, buffer, &memoryRequirements);
+
+	VkMemoryAllocateInfo allocateInfo{};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocateInfo.allocationSize = memoryRequirements.size;
+	// To be able to write to it from CPU.
+	allocateInfo.memoryTypeIndex = FindMemoryType(memoryRequirements.memoryTypeBits, propertyFlags);
+
+	VkResult allocateResult = vkAllocateMemory(mDevice, &allocateInfo, nullptr, &bufferMemory);
+	ASSERT_EQ(allocateResult, VK_SUCCESS, "Failed to allocate vertex buffer memory!");
+
+	// Bind buffer and allocation.
+	vkBindBufferMemory(mDevice, buffer, bufferMemory, 0);
+}
+
+void HelloTriangleApplication::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+{
+	VkCommandBufferAllocateInfo allocateInfo{};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocateInfo.commandPool = mCommandPool;  // maybe we should use TRANSIENT command pool
+	allocateInfo.commandBufferCount = 1;
+
+	VkCommandBuffer commandBuffer;
+	VkResult result = vkAllocateCommandBuffers(mDevice, &allocateInfo, &commandBuffer);
+	ASSERT_EQ(result, VK_SUCCESS, "Failed to create a transient command buffer for transferring vertex data!");
+
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	{
+		VkBufferCopy copyRegion{};
+		copyRegion.srcOffset = 0;
+		copyRegion.dstOffset = 0;
+		copyRegion.size = size;
+		vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+	}
+	vkEndCommandBuffer(commandBuffer);
+
+	// Execute the command buffer immediately.
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(mGraphicsQueue);  // or you can use vkWaitForFences
+
+	vkFreeCommandBuffers(mDevice, mCommandPool, 1, &commandBuffer);
 }
 
 void HelloTriangleApplication::CreateSyncObjects()
@@ -957,6 +1066,9 @@ void HelloTriangleApplication::CleanUp()
 	PRINT("Cleaning up...");
 
 	CleanUpSwapchain();	 // framebuffers, image views, swapchain
+
+	vkDestroyBuffer(mDevice, mVertexBuffer, nullptr);
+	vkFreeMemory(mDevice, mVertexBufferMemory, nullptr);
 
 	vkDestroyPipeline(mDevice, mGraphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
@@ -1110,6 +1222,35 @@ QueueFamilyIndices HelloTriangleApplication::FindQueueFamilies(VkPhysicalDevice 
 	}
 
 	return queueFamilyData;
+}
+
+// If typeFilter is 0000 1100, the function will return an index of 2.
+U32 HelloTriangleApplication::FindMemoryType(U32 typeFilter, VkMemoryPropertyFlags propertyFlags)
+{
+	// Memory heaps are distinct memory resources like dedicated VRAM and swap space in RAM for when VRAM runs out.
+	// The different types of memory exist within these heaps.
+
+	VkPhysicalDeviceMemoryProperties memoryProperties;
+	vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &memoryProperties);
+
+	PRINT("Memory type count: %u | heap count: %u", memoryProperties.memoryTypeCount, memoryProperties.memoryHeapCount);
+
+	for (U32 typeIndex = 0; typeIndex < memoryProperties.memoryTypeCount; typeIndex++)
+	{
+		if (typeFilter & (1 << typeIndex))
+		{
+			VkMemoryType memoryType = memoryProperties.memoryTypes[typeIndex];
+
+			// Check if the desired property flags are all matched.
+			if ((memoryType.propertyFlags & propertyFlags) == propertyFlags)
+			{
+				return typeIndex;
+			}
+		}
+	}
+
+	ASSERT(false, "Failed to find suitable memory type!");
+	return -1;
 }
 
 bool CheckDeviceExtensionSupport(VkPhysicalDevice device)
