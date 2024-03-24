@@ -6,6 +6,8 @@
 
 #include "shader.h"
 
+#include <algorithm>
+
 static const U32 kWidth = 800;
 static const U32 kHeight = 600;
 
@@ -34,11 +36,12 @@ static const bool kEnableValidationLayers = false;
 static const bool kEnableValidationLayers = true;
 #endif
 
-VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-											 VkDebugUtilsMessageTypeFlagsEXT messageType,
-											 const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugMessengerCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+													  VkDebugUtilsMessageTypeFlagsEXT messageType,
+													  const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+													  void* pUserData)
 {
-	std::cerr << "Validation layer: " << pCallbackData->pMessage << std::endl;
+	DEBUG("Validation Output: %s", pCallbackData->pMessage);
 	return VK_FALSE;  // Original Vulkan call is not aborted
 }
 
@@ -49,7 +52,7 @@ void DestroyDebugUtilsMessengerEXT(VkInstance, VkDebugUtilsMessengerEXT, const V
 void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT&);
 
 bool CheckDeviceExtensionSupport(VkPhysicalDevice);
-SwapchainSupportDetails QuerySwapChainSupport(VkPhysicalDevice, VkSurfaceKHR);
+SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
 
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -110,10 +113,8 @@ void HelloTriangleApplication::InitVulkan()
 
 void HelloTriangleApplication::CreateInstance()
 {
-	if (kEnableValidationLayers && !CheckValidationLayerSupport())
-	{
-		ERROR("Validation layers requested, but not available!");
-	}
+	ERROR_IF(kEnableValidationLayers && !CheckValidationLayerSupport(),
+			 "Validation layers requested, but not available!");
 
 	VkApplicationInfo appInfo{};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -135,7 +136,8 @@ void HelloTriangleApplication::CreateInstance()
 	// Additional settings for macOS, otherwise you would get VK_ERROR_INCOMPATIBLE_DRIVER.
 	createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 
-	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};  // Placed outside if for longer lifecycle.
+	// Placed outside if for longer lifecycle before instance will be created.
+	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 
 	if (kEnableValidationLayers)
 	{
@@ -150,10 +152,9 @@ void HelloTriangleApplication::CreateInstance()
 	{
 		createInfo.enabledLayerCount = 0;
 		createInfo.pNext = nullptr;
-	};
+	}
 
 	VkResult result = vkCreateInstance(&createInfo, nullptr, &mInstance);
-
 	ASSERT_EQ(result, VK_SUCCESS, "Failed to create Vulkan instance!");
 }
 
@@ -316,20 +317,22 @@ void HelloTriangleApplication::CleanUpSwapchain()
 
 void HelloTriangleApplication::CreateSwapchain()
 {
-	PRINT("Creating swap chain...");
-	SwapchainSupportDetails swapChainSupport = QuerySwapChainSupport(mPhysicalDevice, mSurface);
+	PRINT("Creating swapchain...");
+	SwapchainSupportDetails swapchainSupport = QuerySwapchainSupport(mPhysicalDevice, mSurface);
 
-	VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
-	VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
-	VkExtent2D extent2D = ChooseSwapExtent(mWindow, swapChainSupport.capabilities);
+	VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapchainSupport.formats);
+	VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapchainSupport.presentModes);
+	VkExtent2D extent2D = ChooseSwapExtent(mWindow, swapchainSupport.capabilities);
 
 	// It is recommended to request at least one more image than the minimum.
-	U32 imageCount = swapChainSupport.capabilities.minImageCount + 1;
+	U32 imageCount = swapchainSupport.capabilities.minImageCount + 1;
 
-	if (swapChainSupport.capabilities.maxImageCount > 0)
+	if (swapchainSupport.capabilities.maxImageCount > 0)
 	{
-		imageCount = std::min(imageCount, swapChainSupport.capabilities.maxImageCount);
+		imageCount = std::min(imageCount, swapchainSupport.capabilities.maxImageCount);
 	}
+
+	PRINT("Image count: %u", imageCount);
 
 	VkSwapchainCreateInfoKHR createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -341,7 +344,7 @@ void HelloTriangleApplication::CreateSwapchain()
 	createInfo.imageArrayLayers = 1;
 	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-	// Specify how to handle swap chain images that will be used across multiple queue families.
+	// Specify how to handle swapchain images that will be used across multiple queue families.
 	// E.g. Drawing on the images in the swap chain from the graphics queue and then submitting
 	// them on the presentation queue.
 	QueueFamilyIndices familyIndices = FindQueueFamilies(mPhysicalDevice);
@@ -362,7 +365,7 @@ void HelloTriangleApplication::CreateSwapchain()
 		createInfo.pQueueFamilyIndices = nullptr;  // Optional
 	}
 
-	createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+	createInfo.preTransform = swapchainSupport.capabilities.currentTransform;
 	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 	createInfo.presentMode = presentMode;
 	createInfo.clipped = VK_TRUE;
@@ -411,13 +414,14 @@ void HelloTriangleApplication::CreateImageViews()
 VkSurfaceFormatKHR HelloTriangleApplication::ChooseSwapSurfaceFormat(
 	const std::vector<VkSurfaceFormatKHR>& availableFormats)
 {
-	for (const auto& availableFormat : availableFormats)
+	auto it = std::find_if(availableFormats.begin(), availableFormats.end(), [](VkSurfaceFormatKHR surfaceFormat) {
+		return surfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
+			   surfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+	});
+
+	if (it != availableFormats.end())
 	{
-		if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
-			availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-		{
-			return availableFormat;
-		}
+		return *it;
 	}
 
 	ASSERT(!availableFormats.empty(), "Failed to pick available format!");
@@ -427,15 +431,10 @@ VkSurfaceFormatKHR HelloTriangleApplication::ChooseSwapSurfaceFormat(
 VkPresentModeKHR HelloTriangleApplication::ChooseSwapPresentMode(
 	const std::vector<VkPresentModeKHR>& availablePresentModes)
 {
-	for (const auto& availablePresentMode : availablePresentModes)
-	{
-		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
-		{
-			return availablePresentMode;
-		}
-	}
+	auto it = std::find_if(availablePresentModes.begin(), availablePresentModes.end(),
+						   [](VkPresentModeKHR presentMode) { return presentMode == VK_PRESENT_MODE_MAILBOX_KHR; });
 
-	return VK_PRESENT_MODE_FIFO_KHR;
+	return (it != availablePresentModes.end()) ? *it : VK_PRESENT_MODE_FIFO_KHR;
 }
 
 VkExtent2D HelloTriangleApplication::ChooseSwapExtent(GLFWwindow* window, const VkSurfaceCapabilitiesKHR& capabilities)
@@ -499,8 +498,8 @@ void HelloTriangleApplication::CreateRenderPass()
 	renderPassCreateInfo.pSubpasses = &subpassDescription;
 
 	// Prevent image layout transition from happening until it's actually allowed,
-	// when we want to start writing colors to it.
-	// This ensures that the render passes don't begin until the image is available.
+	// i.e. when we want to start writing colors to it.
+	// This ensures that the subpass don't begin until the image is available.
 	VkSubpassDependency dependency{};
 	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 	dependency.dstSubpass = 0;
@@ -704,7 +703,7 @@ void HelloTriangleApplication::CreateFramebuffers()
 		framebufferCreateInfo.layers = 1;
 
 		VkResult result = vkCreateFramebuffer(mDevice, &framebufferCreateInfo, nullptr, &mSwapchainFramebuffers[i]);
-		ASSERT_EQ(result, VK_SUCCESS, "Failed to create framebuffer!");
+		ASSERT_EQ(result, VK_SUCCESS, "Failed to create framebuffers!");
 	}
 }
 
@@ -753,7 +752,8 @@ void HelloTriangleApplication::RecordCommandBuffer(VkCommandBuffer commandBuffer
 	VkRenderPassBeginInfo renderPassBeginInfo{};
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassBeginInfo.renderPass = mRenderPass;
-	renderPassBeginInfo.framebuffer = mSwapchainFramebuffers[imageIndex];  // current
+	// (We previously linked all framebuffers to mRenderPass.)
+	renderPassBeginInfo.framebuffer = mSwapchainFramebuffers[imageIndex];  // set the current buffer.
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };
 	renderPassBeginInfo.renderArea.extent = mSwapchainExtent;
 	VkClearValue clearColor = { { { 0.0f, 0.0f, 0.0f, 1.0f } } };
@@ -843,6 +843,7 @@ void HelloTriangleApplication::DrawFrame()
 	}
 
 	// Only reset the fence if we are actually submitting work to avoid deadlock.
+	// Now re-enable the fence between host and GPU.
 	vkResetFences(mDevice, 1, &mInFlightFences[mCurrentFrame]);
 
 	// 3. Record commands (begin buffer, begin render pass, bind pipeline, draw)
@@ -957,18 +958,11 @@ bool HelloTriangleApplication::CheckValidationLayerSupport()
 	// Make sure all the layer names are present.
 	for (const char* layerName : kValidationLayers)
 	{
-		bool layerFound = false;
+		auto it = std::find_if(
+			availableLayers.begin(), availableLayers.end(),
+			[layerName](VkLayerProperties layerProperties) { return strcmp(layerProperties.layerName, layerName); });
 
-		for (const auto& layerProperties : availableLayers)
-		{
-			if (strcmp(layerName, layerProperties.layerName) == 0)
-			{
-				layerFound = true;
-				break;
-			}
-		}
-
-		if (!layerFound)
+		if (it == availableLayers.end())
 		{
 			return false;
 		}
@@ -1020,7 +1014,7 @@ void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& create
 							 VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
 							 VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 
-	createInfo.pfnUserCallback = DebugCallback;
+	createInfo.pfnUserCallback = DebugMessengerCallback;
 	createInfo.pUserData = nullptr;
 }
 
@@ -1033,7 +1027,7 @@ bool HelloTriangleApplication::IsPhysicalDeviceSuitable(VkPhysicalDevice device)
 	bool swapChainAdequate = false;
 	if (extensionsSupported)
 	{
-		SwapchainSupportDetails swapChainSupport = QuerySwapChainSupport(device, mSurface);
+		SwapchainSupportDetails swapChainSupport = QuerySwapchainSupport(device, mSurface);
 		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 	}
 
@@ -1098,8 +1092,8 @@ bool CheckDeviceExtensionSupport(VkPhysicalDevice device)
 	return requiredExtensions.empty();
 }
 
-// Device and surface are needed as they are core components of swap chain.
-SwapchainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
+// Physical device and surface are needed as they are core components of swapchain.
+SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
 {
 	SwapchainSupportDetails details{};
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
@@ -1127,6 +1121,8 @@ SwapchainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurface
 
 void HelloTriangleApplication::FramebufferResizeCallback(GLFWwindow* window, int width, int height)
 {
-	auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
+	// auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
+	// 'void*' conversion is well defined, so we can use static_cast.
+	auto app = static_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
 	app->mFramebufferResized = true;
 }

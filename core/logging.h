@@ -14,6 +14,7 @@
 #define PRINT(fmt, ...) printf("[INFO] (%s:%d) - " fmt "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #define WARN(fmt, ...) printf("[WARN] (%s:%d) - " fmt "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #define ERROR(fmt, ...) printf("[ERROR] (%s:%d) - " fmt "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define DEBUG(fmt, ...) printf("[DEBUG] (%s:%d) - " fmt "\n", __FUNCTION__, __LINE__, ##__VA_ARGS__)
 
 #define PRINT_IF(exp, fmt, ...)        \
 	do                                 \
@@ -34,6 +35,13 @@
 	{                                  \
 		if (exp)                       \
 			ERROR(fmt, ##__VA_ARGS__); \
+	} while (0)
+
+#define DEBUG_IF(exp, fmt, ...)        \
+	do                                 \
+	{                                  \
+		if (exp)                       \
+			DEBUG(fmt, ##__VA_ARGS__); \
 	} while (0)
 
 #define NEWLINE(x) printf(x "\n")

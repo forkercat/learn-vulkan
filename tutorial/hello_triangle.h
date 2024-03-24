@@ -24,35 +24,52 @@ public:
 	void Run();
 
 private:
+	// Initialize GLFW window.
 	void InitWindow();
+	// Initialize Vulkan resources.
 	void InitVulkan();
 
-	// Instance, device & validation layers
+	/// Instance, device & validation layers
+
+	// Create a Vulkan instance. Usually you would create the Vulkan application and check and specify required
+	// extensions by GLFW, your platform, and validation layer.
 	void CreateInstance();
+	// Set up the debug messenger callback for validation layer. You would also configure the validation debug options.
 	void SetupDebugMessenger();
+	// Create window surface. Since GLFW supports Vulkan API, we will use GLFW API to create the Vulkan surface object.
 	void CreateWindowSurface();
+	// Pick an available physical device and check if required device extensions are supported (e.g. swapchain).
+	// We can also query the physical device about queue families and device features.
 	void PickPhysicalDevice();
+	// Create a logical device and queues.
 	void CreateLogicalDeviceAndQueues();
 
-	// Swapchain & pipeline
+	/// Swapchain & pipeline
 	void RecreateSwapchain();
 	void CleanUpSwapchain();
 
+	// Create a swapchain with swap images and queues.
 	void CreateSwapchain();
 	void CreateImageViews();
+	// Create a render pass with subpasses that define attachment formats.
 	void CreateRenderPass();
+	// Create a graphics pipeline state object (PSO) with shaders. Set the pipeline's render pass.
 	void CreateGraphicsPipeline();
+	// Create framebuffers for swap image views. Note that we create framebuffers after and later when we begin the
+	// render pass it would require setting framebuffers for the render pass.
 	void CreateFramebuffers();
 
-	// Command buffer
+	/// Command buffer
+
+	// Create command pool for a particular family of queues (i.e. graphics).
 	void CreateCommandPool();
 	void CreateCommandBuffers();
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, U32 imageIndex);
 
-	// Synchronization
+	/// Synchronization
 	void CreateSyncObjects();
 
-	// Draw
+	/// Draw
 	void DrawFrame();
 
 	void MainLoop();
@@ -76,11 +93,11 @@ private:
 	GLFWwindow* mWindow;
 	VkInstance mInstance;
 	VkDebugUtilsMessengerEXT mDebugMessenger;
+	VkSurfaceKHR mSurface;
 	VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;	// Auto destroyed when VkInstance is destroyed.
 	VkDevice mDevice;
 	VkQueue mGraphicsQueue;
 	VkQueue mPresentQueue;
-	VkSurfaceKHR mSurface;
 
 	// Swap chain
 	VkSwapchainKHR mSwapchain;
