@@ -68,6 +68,7 @@ private:
 
 	/// Vertex buffer
 	void CreateVertexBuffer();
+	void CreateIndexBuffer();
 	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags,
 					  VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
@@ -124,6 +125,8 @@ private:
 	VkCommandPool mCommandPool;
 	VkBuffer mVertexBuffer;
 	VkDeviceMemory mVertexBufferMemory;
+	VkBuffer mIndexBuffer;
+	VkDeviceMemory mIndexBufferMemory;
 	std::vector<VkCommandBuffer> mCommandBuffers;
 
 	// Synchronization
