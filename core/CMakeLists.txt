@@ -8,6 +8,7 @@ PUBLIC
 	${SRC_ROOT}/logging.h
 	${SRC_ROOT}/typedefs.h
 	${SRC_ROOT}/uassert.h
+	${SRC_ROOT}/math.h
 PRIVATE
 	${SRC_ROOT}/core.cpp
 )

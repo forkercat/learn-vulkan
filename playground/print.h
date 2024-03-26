@@ -4,8 +4,13 @@
 
 #pragma once
 
+#include <iostream>
 
-
-class print {
-
+template <typename T>
+class Object {
+public:
+	void Test(T value);
 };
+
+template <typename T>
+void Print(T value);

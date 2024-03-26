@@ -6,26 +6,29 @@
 
 #include <iostream>
 #include <vector>
+#include <memory>
+
+#include "print.h"
 
 int main()
 {
-	PRINT("hahah");
+	int num = 999999;
+	int* p = &num;
 
-	PRINT("%s -> %s", "123", "456");
+	// void* vp = (void*) p;
+	void* vp = static_cast<void*>(p);
+	int* ip = static_cast<int*>(vp);
+	void* vpp = reinterpret_cast<void*>(p);
+	int* ipp = reinterpret_cast<int*>(vp);
 
-	std::string sb = "123";
+	// double* doublePtr = static_cast<double*>(p);
+	// char* charPtr = static_cast<char*>(p);
 
-	PRINT("------- %s", sb.c_str());
+	double* doublePtr = (double*)p;
 
-	PRINT(STR(123123));
+	// double* doublePtr = reinterpret_cast<double*>(p);
 
-	WARN_IF(true, "Hello World! %s", "123");
-
-	PRINT_IF(true, "Hello!!!! %d", 9999);
-
-	ERROR_IF(true, "Yes!!!!!! error!!!!!");
-
-	PRINT("Cool");
+	PRINT("%lf", *doublePtr);
 
 	return 0;
 }

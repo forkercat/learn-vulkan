@@ -9,6 +9,10 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <vector>
 #include <iostream>
 #include <set>
@@ -53,6 +57,8 @@ private:
 	void CreateImageViews();
 	// Create a render pass with subpasses that define attachment formats.
 	void CreateRenderPass();
+	// Create a descriptor set layout.
+	void CreateDescriptorSetLayout();
 	// Create a graphics pipeline state object (PSO) with shaders. Set the pipeline's render pass.
 	void CreateGraphicsPipeline();
 	// Create framebuffers for swap image views. Note that we create framebuffers after and later when we begin the
@@ -66,9 +72,13 @@ private:
 	void CreateCommandBuffers();
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, U32 imageIndex);
 
+	/// Uniform buffer
+	void UpdateUniformBuffer(U32 currentFrame);
+
 	/// Vertex buffer
 	void CreateVertexBuffer();
 	void CreateIndexBuffer();
+	void CreateUniformBuffers();
 	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags,
 					  VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
@@ -118,16 +128,23 @@ private:
 
 	// Graphics pipeline
 	VkRenderPass mRenderPass;
+	VkDescriptorSetLayout mDescriptorSetLayout;
 	VkPipelineLayout mPipelineLayout;
 	VkPipeline mGraphicsPipeline;
 
 	// Commands
 	VkCommandPool mCommandPool;
+	std::vector<VkCommandBuffer> mCommandBuffers;
+
+	// Buffers
 	VkBuffer mVertexBuffer;
 	VkDeviceMemory mVertexBufferMemory;
 	VkBuffer mIndexBuffer;
 	VkDeviceMemory mIndexBufferMemory;
-	std::vector<VkCommandBuffer> mCommandBuffers;
+
+	std::vector<VkBuffer> mUniformBuffers;
+	std::vector<VkDeviceMemory> mUniformBufferMemoryList;
+	std::vector<void*> mUniformBufferMappedPointers;
 
 	// Synchronization
 	std::vector<VkSemaphore> mImageAvailableSemaphores;

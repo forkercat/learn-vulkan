@@ -4,7 +4,11 @@ add_executable(playground)
 
 target_sources(playground
 PRIVATE
+	${SRC_ROOT}/print.cpp
+	${SRC_ROOT}/app.cpp
 	${SRC_ROOT}/main.cpp
+PUBLIC
+	${SRC_ROOT}/print.h
 )
 
 target_link_libraries(playground

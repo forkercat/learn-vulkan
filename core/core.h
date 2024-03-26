@@ -7,3 +7,4 @@
 #include "logging.h"
 #include "typedefs.h"
 #include "uassert.h"
+#include "math.h"

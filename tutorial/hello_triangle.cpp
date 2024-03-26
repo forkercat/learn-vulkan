@@ -7,14 +7,15 @@
 #include "shader.h"
 
 #include <algorithm>
+#include <chrono>
 
 static const U32 kWidth = 800;
 static const U32 kHeight = 600;
 
 struct Vertex
 {
-	Vec2 position;
-	Vec3 color;
+	glm::vec2 position;
+	glm::vec3 color;
 
 	static VkVertexInputBindingDescription GetBindingDescription()
 	{
@@ -39,6 +40,13 @@ struct Vertex
 		attributeDescriptions[1].offset = offsetof(Vertex, color);
 		return attributeDescriptions;
 	}
+};
+
+struct UniformBufferObject
+{
+	glm::mat4 model;
+	glm::mat4 view;
+	glm::mat4 proj;
 };
 
 static const std::vector<Vertex> kVertexData = { { { -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
@@ -139,12 +147,14 @@ void HelloTriangleApplication::InitVulkan()
 	CreateSwapchain();
 	CreateImageViews();
 	CreateRenderPass();
+	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
 	CreateFramebuffers();
 
 	CreateCommandPool();
 	CreateVertexBuffer();
 	CreateIndexBuffer();
+	CreateUniformBuffers();
 	CreateCommandBuffers();
 
 	CreateSyncObjects();
@@ -555,6 +565,24 @@ void HelloTriangleApplication::CreateRenderPass()
 	ASSERT_EQ(result, VK_SUCCESS, "Failed to create render pass!");
 }
 
+void HelloTriangleApplication::CreateDescriptorSetLayout()
+{
+	VkDescriptorSetLayoutBinding uboLayoutBinding{};
+	uboLayoutBinding.binding = 0;
+	uboLayoutBinding.descriptorCount = 1;
+	uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	uboLayoutBinding.pImmutableSamplers = nullptr;
+
+	VkDescriptorSetLayoutCreateInfo layoutInfo{};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = 1;
+	layoutInfo.pBindings = &uboLayoutBinding;
+
+	VkResult result = vkCreateDescriptorSetLayout(mDevice, &layoutInfo, nullptr, &mDescriptorSetLayout);
+	ASSERT_EQ(result, VK_SUCCESS, "Failed to create descriptor set layout!");
+}
+
 void HelloTriangleApplication::CreateGraphicsPipeline()
 {
 	PRINT("Creating graphics pipeline...");
@@ -585,10 +613,10 @@ void HelloTriangleApplication::CreateGraphicsPipeline()
 	// Pipeline states
 	std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 
-	VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{};
-	dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	dynamicStateCreateInfo.dynamicStateCount = static_cast<U32>(dynamicStates.size());
-	dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
+	VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
+	dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamicStateInfo.dynamicStateCount = static_cast<U32>(dynamicStates.size());
+	dynamicStateInfo.pDynamicStates = dynamicStates.data();
 
 	// Viewport and scissors
 	VkViewport viewport{};
@@ -603,54 +631,54 @@ void HelloTriangleApplication::CreateGraphicsPipeline()
 	scissor.offset = { 0, 0 };
 	scissor.extent = mSwapchainExtent;
 
-	VkPipelineViewportStateCreateInfo viewportStateCreateInfo{};
-	viewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	viewportStateCreateInfo.viewportCount = 1;
-	viewportStateCreateInfo.pViewports = &viewport;
-	viewportStateCreateInfo.scissorCount = 1;
-	viewportStateCreateInfo.pScissors = &scissor;
+	VkPipelineViewportStateCreateInfo viewportStateInfo{};
+	viewportStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewportStateInfo.viewportCount = 1;
+	viewportStateInfo.pViewports = &viewport;
+	viewportStateInfo.scissorCount = 1;
+	viewportStateInfo.pScissors = &scissor;
 
 	// Vertex input format
-	VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo{};
-	vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
 	auto bindingDescription = Vertex::GetBindingDescription();
-	vertexInputCreateInfo.vertexBindingDescriptionCount = 1;
-	vertexInputCreateInfo.pVertexBindingDescriptions = &bindingDescription;
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
 
 	auto attributeDescription = Vertex::GetAttributeDescriptions();
-	vertexInputCreateInfo.vertexAttributeDescriptionCount = static_cast<U32>(attributeDescription.size());
-	vertexInputCreateInfo.pVertexAttributeDescriptions = attributeDescription.data();
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<U32>(attributeDescription.size());
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
 
 	// Input assembly
-	VkPipelineInputAssemblyStateCreateInfo inputAssemblyCreateInfo{};
-	inputAssemblyCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssemblyCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-	inputAssemblyCreateInfo.primitiveRestartEnable = VK_FALSE;
+	VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
+	inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
 	// Rasterizer
-	VkPipelineRasterizationStateCreateInfo rasterizerCreateInfo{};
-	rasterizerCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	rasterizerCreateInfo.depthClampEnable = VK_FALSE;
-	rasterizerCreateInfo.rasterizerDiscardEnable = VK_FALSE;
-	rasterizerCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
-	rasterizerCreateInfo.lineWidth = 1.0f;
-	rasterizerCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-	rasterizerCreateInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
-	rasterizerCreateInfo.depthBiasEnable = VK_FALSE;
-	rasterizerCreateInfo.depthBiasConstantFactor = 0.0f;  // Optional
-	rasterizerCreateInfo.depthBiasClamp = 0.0f;			  // Optional
-	rasterizerCreateInfo.depthBiasSlopeFactor = 0.0f;	  // Optional
+	VkPipelineRasterizationStateCreateInfo rasterizerInfo{};
+	rasterizerInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	rasterizerInfo.depthClampEnable = VK_FALSE;
+	rasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
+	rasterizerInfo.polygonMode = VK_POLYGON_MODE_FILL;
+	rasterizerInfo.lineWidth = 1.0f;
+	rasterizerInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterizerInfo.depthBiasEnable = VK_FALSE;
+	rasterizerInfo.depthBiasConstantFactor = 0.0f;	// Optional
+	rasterizerInfo.depthBiasClamp = 0.0f;			// Optional
+	rasterizerInfo.depthBiasSlopeFactor = 0.0f;		// Optional
 
 	// Multisampling, depth and stencil testing
-	VkPipelineMultisampleStateCreateInfo multisampleCreateInfo{};
-	multisampleCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multisampleCreateInfo.sampleShadingEnable = VK_FALSE;
-	multisampleCreateInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-	multisampleCreateInfo.minSampleShading = 1.0f;
-	multisampleCreateInfo.pSampleMask = nullptr;
-	multisampleCreateInfo.alphaToCoverageEnable = VK_FALSE;
-	multisampleCreateInfo.alphaToOneEnable = VK_FALSE;
+	VkPipelineMultisampleStateCreateInfo multisampleInfo{};
+	multisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	multisampleInfo.sampleShadingEnable = VK_FALSE;
+	multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	multisampleInfo.minSampleShading = 1.0f;
+	multisampleInfo.pSampleMask = nullptr;
+	multisampleInfo.alphaToCoverageEnable = VK_FALSE;
+	multisampleInfo.alphaToOneEnable = VK_FALSE;
 
 	// VkPipelineDepthStencilStateCreateInfo;
 
@@ -660,48 +688,44 @@ void HelloTriangleApplication::CreateGraphicsPipeline()
 		VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 	colorBlendAttachment.blendEnable = VK_FALSE;
 
-	VkPipelineColorBlendStateCreateInfo colorBlendCreateInfo{};
-	colorBlendCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	colorBlendCreateInfo.logicOpEnable = VK_FALSE;
-	colorBlendCreateInfo.logicOp = VK_LOGIC_OP_COPY;
-	colorBlendCreateInfo.attachmentCount = 1;
-	colorBlendCreateInfo.pAttachments = &colorBlendAttachment;
+	VkPipelineColorBlendStateCreateInfo colorBlendInfo{};
+	colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	colorBlendInfo.logicOpEnable = VK_FALSE;
+	colorBlendInfo.logicOp = VK_LOGIC_OP_COPY;
+	colorBlendInfo.attachmentCount = 1;
+	colorBlendInfo.pAttachments = &colorBlendAttachment;
 
 	// Pipeline layout (uniform)
 	// This will be referenced throughout the program's lifetime.
-	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
-	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutCreateInfo.setLayoutCount = 0;
-	pipelineLayoutCreateInfo.pSetLayouts = nullptr;
-	pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
-	pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	pipelineLayoutInfo.setLayoutCount = 1;
+	pipelineLayoutInfo.pSetLayouts = &mDescriptorSetLayout;
 
 	VkResult createPipelineLayoutResult =
-		vkCreatePipelineLayout(mDevice, &pipelineLayoutCreateInfo, nullptr, &mPipelineLayout);
+		vkCreatePipelineLayout(mDevice, &pipelineLayoutInfo, nullptr, &mPipelineLayout);
 	ASSERT_EQ(createPipelineLayoutResult, VK_SUCCESS, "Failed to create pipeline layout!");
 
 	// Graphics pipeline
-	VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
-	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineCreateInfo.stageCount = 2;
-	pipelineCreateInfo.pStages = shaderStages;
-	pipelineCreateInfo.pVertexInputState = &vertexInputCreateInfo;
-	pipelineCreateInfo.pInputAssemblyState = &inputAssemblyCreateInfo;
-	pipelineCreateInfo.pViewportState = &viewportStateCreateInfo;
-	pipelineCreateInfo.pRasterizationState = &rasterizerCreateInfo;
-	pipelineCreateInfo.pMultisampleState = &multisampleCreateInfo;
-	pipelineCreateInfo.pDepthStencilState = nullptr;
-	pipelineCreateInfo.pColorBlendState = &colorBlendCreateInfo;
-	pipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
+	VkGraphicsPipelineCreateInfo pipelineInfo{};
+	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfo.stageCount = 2;
+	pipelineInfo.pStages = shaderStages;
+	pipelineInfo.pVertexInputState = &vertexInputInfo;
+	pipelineInfo.pInputAssemblyState = &inputAssemblyInfo;
+	pipelineInfo.pViewportState = &viewportStateInfo;
+	pipelineInfo.pRasterizationState = &rasterizerInfo;
+	pipelineInfo.pMultisampleState = &multisampleInfo;
+	pipelineInfo.pDepthStencilState = nullptr;
+	pipelineInfo.pColorBlendState = &colorBlendInfo;
+	pipelineInfo.pDynamicState = &dynamicStateInfo;
 
-	pipelineCreateInfo.layout = mPipelineLayout;
-	pipelineCreateInfo.renderPass = mRenderPass;
-	pipelineCreateInfo.subpass = 0;
-	pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;	 // Optional
-	pipelineCreateInfo.basePipelineIndex = -1;				 // Optional
+	pipelineInfo.layout = mPipelineLayout;
+	pipelineInfo.renderPass = mRenderPass;
+	pipelineInfo.subpass = 0;
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
 
-	VkResult result =
-		vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &mGraphicsPipeline);
+	VkResult result = vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mGraphicsPipeline);
 	ASSERT_EQ(result, VK_SUCCESS, "Failed to create graphics pipeline!");
 
 	// Cleanup
@@ -835,6 +859,25 @@ void HelloTriangleApplication::RecordCommandBuffer(VkCommandBuffer commandBuffer
 	ASSERT_EQ(endResult, VK_SUCCESS, "Failed to end command buffer!");
 }
 
+void HelloTriangleApplication::UpdateUniformBuffer(U32 currentFrame)
+{
+	static std::chrono::time_point startTime = std::chrono::high_resolution_clock::now();
+
+	std::chrono::time_point currentTime = std::chrono::high_resolution_clock::now();
+	F32 duration = std::chrono::duration<F32, std::chrono::seconds::period>(currentTime - startTime).count();
+
+	UniformBufferObject ubo{};
+	ubo.model = glm::rotate(glm::mat4(1.0f), duration * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	F32 aspectRatio = mSwapchainExtent.width / (F32)mSwapchainExtent.height;
+	ubo.proj = glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 10.0f);
+	// glm was designed for OpenGL, where the Y coordinate of the clip coordinates is inverted.
+	// If not doing this, the image will be rendered upside down.
+	ubo.proj[1][1] *= -1;
+
+	memcpy(mUniformBufferMappedPointers[currentFrame], &ubo, sizeof(ubo));
+}
+
 void HelloTriangleApplication::CreateVertexBuffer()
 {
 	// We can use VERTEX_BUFFER_BIT for our vertex buffer, but it is not optimal for GPU to read data from.
@@ -895,6 +938,23 @@ void HelloTriangleApplication::CreateIndexBuffer()
 
 	vkDestroyBuffer(mDevice, stagingBuffer, nullptr);
 	vkFreeMemory(mDevice, stagingBufferMemory, nullptr);
+}
+
+void HelloTriangleApplication::CreateUniformBuffers()
+{
+	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+	mUniformBuffers.resize(kMaxFramesInFlight);
+	mUniformBufferMemoryList.resize(kMaxFramesInFlight);
+	mUniformBufferMappedPointers.resize(kMaxFramesInFlight);
+
+	for (USize i = 0; i < kMaxFramesInFlight; i++)
+	{
+		CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+					 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, mUniformBuffers[i],
+					 mUniformBufferMemoryList[i]);
+
+		vkMapMemory(mDevice, mUniformBufferMemoryList[i], 0, bufferSize, 0, &mUniformBufferMappedPointers[i]);
+	}
 }
 
 void HelloTriangleApplication::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags,
@@ -1021,6 +1081,9 @@ void HelloTriangleApplication::DrawFrame()
 		ASSERT(false, "Failed to acquire a swapchain image!");
 	}
 
+	// Uniform data
+	UpdateUniformBuffer(mCurrentFrame);
+
 	// Only reset the fence if we are actually submitting work to avoid deadlock.
 	// Now re-enable the fence between host and GPU.
 	vkResetFences(mDevice, 1, &mInFlightFences[mCurrentFrame]);
@@ -1098,6 +1161,14 @@ void HelloTriangleApplication::CleanUp()
 	PRINT("Cleaning up...");
 
 	CleanUpSwapchain();	 // framebuffers, image views, swapchain
+
+	for (USize i = 0; i < kMaxFramesInFlight; i++)
+	{
+		vkDestroyBuffer(mDevice, mUniformBuffers[i], nullptr);
+		vkFreeMemory(mDevice, mUniformBufferMemoryList[i], nullptr);
+	}
+
+	vkDestroyDescriptorSetLayout(mDevice, mDescriptorSetLayout, nullptr);
 
 	vkDestroyBuffer(mDevice, mIndexBuffer, nullptr);
 	vkFreeMemory(mDevice, mIndexBufferMemory, nullptr);
@@ -1268,7 +1339,8 @@ U32 HelloTriangleApplication::FindMemoryType(U32 typeFilter, VkMemoryPropertyFla
 	VkPhysicalDeviceMemoryProperties memoryProperties;
 	vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &memoryProperties);
 
-	PRINT("Memory type count: %u | heap count: %u", memoryProperties.memoryTypeCount, memoryProperties.memoryHeapCount);
+	// PRINT("Memory type count: %u | heap count: %u", memoryProperties.memoryTypeCount,
+	// memoryProperties.memoryHeapCount);
 
 	for (U32 typeIndex = 0; typeIndex < memoryProperties.memoryTypeCount; typeIndex++)
 	{

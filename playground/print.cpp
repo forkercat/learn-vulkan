@@ -3,3 +3,14 @@
 //
 
 #include "print.h"
+
+template class Object<int>;
+
+template <typename T>
+void Print(T value) {
+	std::cout << value << std::endl;
+}
+
+void Test() {
+	Print(10);
+}
