@@ -44,9 +44,9 @@ struct Vertex
 
 struct UniformBufferObject
 {
-	glm::mat4 model;
-	glm::mat4 view;
-	glm::mat4 proj;
+	alignas(16) glm::mat4 model;
+	alignas(16) glm::mat4 view;
+	alignas(16) glm::mat4 proj;
 };
 
 static const std::vector<Vertex> kVertexData = { { { -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
@@ -154,7 +154,11 @@ void HelloTriangleApplication::InitVulkan()
 	CreateCommandPool();
 	CreateVertexBuffer();
 	CreateIndexBuffer();
+
 	CreateUniformBuffers();
+	CreateDescriptorPool();
+	CreateDescriptorSets();
+
 	CreateCommandBuffers();
 
 	CreateSyncObjects();
@@ -664,7 +668,7 @@ void HelloTriangleApplication::CreateGraphicsPipeline()
 	rasterizerInfo.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizerInfo.lineWidth = 1.0f;
 	rasterizerInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-	rasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizerInfo.depthBiasEnable = VK_FALSE;
 	rasterizerInfo.depthBiasConstantFactor = 0.0f;	// Optional
 	rasterizerInfo.depthBiasClamp = 0.0f;			// Optional
@@ -852,6 +856,10 @@ void HelloTriangleApplication::RecordCommandBuffer(VkCommandBuffer commandBuffer
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 	vkCmdBindIndexBuffer(commandBuffer, mIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
+	// Bind descriptor sets.
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1,
+							&mDescriptorSets[mCurrentFrame], 0, nullptr);
+
 	vkCmdDrawIndexed(commandBuffer, static_cast<U32>(kIndexData.size()), 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);
@@ -954,6 +962,59 @@ void HelloTriangleApplication::CreateUniformBuffers()
 					 mUniformBufferMemoryList[i]);
 
 		vkMapMemory(mDevice, mUniformBufferMemoryList[i], 0, bufferSize, 0, &mUniformBufferMappedPointers[i]);
+	}
+}
+
+void HelloTriangleApplication::CreateDescriptorPool()
+{
+	VkDescriptorPoolSize poolSize{};
+	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSize.descriptorCount = static_cast<U32>(kMaxFramesInFlight);
+
+	VkDescriptorPoolCreateInfo poolInfo{};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = 1;
+	poolInfo.pPoolSizes = &poolSize;
+	poolInfo.maxSets = static_cast<U32>(kMaxFramesInFlight);
+
+	VkResult result = vkCreateDescriptorPool(mDevice, &poolInfo, nullptr, &mDescriptorPool);
+	ASSERT_EQ(result, VK_SUCCESS, "Failed to create descriptor pool!");
+}
+
+void HelloTriangleApplication::CreateDescriptorSets()
+{
+	std::vector<VkDescriptorSetLayout> descriptorSetLayout(kMaxFramesInFlight, mDescriptorSetLayout);
+
+	VkDescriptorSetAllocateInfo allocateInfo{};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocateInfo.descriptorPool = mDescriptorPool;
+	allocateInfo.descriptorSetCount = static_cast<U32>(kMaxFramesInFlight);
+	allocateInfo.pSetLayouts = descriptorSetLayout.data();
+
+	mDescriptorSets.resize(kMaxFramesInFlight);
+	VkResult result = vkAllocateDescriptorSets(mDevice, &allocateInfo, mDescriptorSets.data());
+	ASSERT_EQ(result, VK_SUCCESS, "Failed to allocate descriptor sets!");
+
+	// Configure descriptor sets.
+	for (USize i = 0; i < kMaxFramesInFlight; i++)
+	{
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = mUniformBuffers[i];
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(UniformBufferObject);
+
+		VkWriteDescriptorSet descriptorWrite{};
+		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet = mDescriptorSets[i];
+		descriptorWrite.dstBinding = 0;
+		descriptorWrite.dstArrayElement = 0;
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descriptorWrite.descriptorCount = 1;
+		descriptorWrite.pBufferInfo = &bufferInfo;
+		descriptorWrite.pImageInfo = nullptr;
+		descriptorWrite.pTexelBufferView = nullptr;
+
+		vkUpdateDescriptorSets(mDevice, 1, &descriptorWrite, 0, nullptr);
 	}
 }
 
@@ -1168,6 +1229,7 @@ void HelloTriangleApplication::CleanUp()
 		vkFreeMemory(mDevice, mUniformBufferMemoryList[i], nullptr);
 	}
 
+	vkDestroyDescriptorPool(mDevice, mDescriptorPool, nullptr);
 	vkDestroyDescriptorSetLayout(mDevice, mDescriptorSetLayout, nullptr);
 
 	vkDestroyBuffer(mDevice, mIndexBuffer, nullptr);

@@ -73,12 +73,16 @@ private:
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, U32 imageIndex);
 
 	/// Uniform buffer
+	void CreateUniformBuffers();
 	void UpdateUniformBuffer(U32 currentFrame);
 
 	/// Vertex buffer
 	void CreateVertexBuffer();
 	void CreateIndexBuffer();
-	void CreateUniformBuffers();
+
+	void CreateDescriptorPool();
+	void CreateDescriptorSets();
+
 	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags,
 					  VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
@@ -126,9 +130,11 @@ private:
 	std::vector<VkImageView> mSwapchainImageViews;
 	std::vector<VkFramebuffer> mSwapchainFramebuffers;
 
-	// Graphics pipeline
+	// Graphics pipeline & descriptors
 	VkRenderPass mRenderPass;
 	VkDescriptorSetLayout mDescriptorSetLayout;
+	VkDescriptorPool mDescriptorPool;
+	std::vector<VkDescriptorSet> mDescriptorSets;
 	VkPipelineLayout mPipelineLayout;
 	VkPipeline mGraphicsPipeline;
 
