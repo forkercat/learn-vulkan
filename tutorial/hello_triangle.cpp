@@ -156,6 +156,7 @@ void HelloTriangleApplication::InitVulkan()
 
 	CreateCommandPool();
 	CreateTextureImage();
+	CreateTextureImageView();
 	CreateVertexBuffer();
 	CreateIndexBuffer();
 
@@ -446,26 +447,28 @@ void HelloTriangleApplication::CreateImageViews()
 
 	for (USize i = 0; i < mSwapchainImages.size(); i++)
 	{
-		VkImageViewCreateInfo createInfo{};
-		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		createInfo.image = mSwapchainImages[i];
-		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		createInfo.format = mSwapchainImageFormat;
-
-		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-		createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		createInfo.subresourceRange.baseMipLevel = 0;
-		createInfo.subresourceRange.levelCount = 1;
-		createInfo.subresourceRange.baseArrayLayer = 0;
-		createInfo.subresourceRange.layerCount = 1;
-
-		VkResult result = vkCreateImageView(mDevice, &createInfo, nullptr, &mSwapchainImageViews[i]);
-		ASSERT_EQ(result, VK_SUCCESS, "Failed to create image views for swapchain images!");
+		mSwapchainImageViews[i] = CreateImageView(mSwapchainImages[i], mSwapchainImageFormat);
 	}
+}
+
+VkImageView HelloTriangleApplication::CreateImageView(VkImage image, VkFormat format)
+{
+	VkImageViewCreateInfo viewInfo{};
+	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewInfo.image = image;
+	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.format = format;
+	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	viewInfo.subresourceRange.baseMipLevel = 0;
+	viewInfo.subresourceRange.levelCount = 1;
+	viewInfo.subresourceRange.baseArrayLayer = 0;
+	viewInfo.subresourceRange.layerCount = 1;
+
+	VkImageView imageView;
+	VkResult result = vkCreateImageView(mDevice, &viewInfo, nullptr, &imageView);
+	ASSERT_EQ(result, VK_SUCCESS, "Failed to create image view!");
+
+	return imageView;
 }
 
 VkSurfaceFormatKHR HelloTriangleApplication::ChooseSwapSurfaceFormat(
@@ -1141,6 +1144,11 @@ void HelloTriangleApplication::CopyBufferToImage(VkBuffer buffer, VkImage image,
 	EndSingleTimeCommands(commandBuffer);
 }
 
+void HelloTriangleApplication::CreateTextureImageView()
+{
+	mTextureImageView = CreateImageView(mTextureImage, VK_FORMAT_R8G8B8A8_SRGB);
+}
+
 void HelloTriangleApplication::CreateUniformBuffers()
 {
 	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
@@ -1392,6 +1400,7 @@ void HelloTriangleApplication::CleanUp()
 
 	CleanUpSwapchain();	 // framebuffers, image views, swapchain
 
+	vkDestroyImageView(mDevice, mTextureImageView, nullptr);
 	vkDestroyImage(mDevice, mTextureImage, nullptr);
 	vkFreeMemory(mDevice, mTextureImageMemory, nullptr);
 

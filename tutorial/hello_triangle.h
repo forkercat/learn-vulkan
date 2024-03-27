@@ -55,6 +55,7 @@ private:
 	// Create a swapchain with swap images and queues.
 	void CreateSwapchain();
 	void CreateImageViews();
+	VkImageView CreateImageView(VkImage image, VkFormat format);
 	// Create a render pass with subpasses that define attachment formats.
 	void CreateRenderPass();
 	// Create a descriptor set layout.
@@ -80,6 +81,7 @@ private:
 					 VkMemoryPropertyFlags propertyFlags, VkImage& image, VkDeviceMemory& imageMemory);
 	void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void CopyBufferToImage(VkBuffer buffer, VkImage image, U32 width, U32 height);
+	void CreateTextureImageView();
 
 	/// Uniform buffer
 	void CreateUniformBuffers();
@@ -160,6 +162,7 @@ private:
 	// Texture images
 	VkImage mTextureImage;
 	VkDeviceMemory mTextureImageMemory;
+	VkImageView mTextureImageView;
 
 	std::vector<VkBuffer> mUniformBuffers;
 	std::vector<VkDeviceMemory> mUniformBufferMemoryList;
