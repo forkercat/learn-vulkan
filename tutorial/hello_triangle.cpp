@@ -157,6 +157,8 @@ void HelloTriangleApplication::InitVulkan()
 	CreateCommandPool();
 	CreateTextureImage();
 	CreateTextureImageView();
+	CreateTextureSampler();
+
 	CreateVertexBuffer();
 	CreateIndexBuffer();
 
@@ -279,7 +281,7 @@ void HelloTriangleApplication::PickPhysicalDevice()
 
 void HelloTriangleApplication::CreateLogicalDeviceAndQueues()
 {
-	PRINT("Creating logical device...");
+	PRINT("Creating logical device and queues...");
 
 	// Queue families
 	QueueFamilyIndices queueFamilyData = FindQueueFamilies(mPhysicalDevice);
@@ -303,6 +305,7 @@ void HelloTriangleApplication::CreateLogicalDeviceAndQueues()
 
 	// Features
 	VkPhysicalDeviceFeatures deviceFeatures{};
+	deviceFeatures.samplerAnisotropy = VK_TRUE;
 
 	VkDeviceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -1149,6 +1152,35 @@ void HelloTriangleApplication::CreateTextureImageView()
 	mTextureImageView = CreateImageView(mTextureImage, VK_FORMAT_R8G8B8A8_SRGB);
 }
 
+void HelloTriangleApplication::CreateTextureSampler()
+{
+	VkSamplerCreateInfo samplerInfo{};
+	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerInfo.magFilter = VK_FILTER_LINEAR;
+	samplerInfo.minFilter = VK_FILTER_LINEAR;
+	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	samplerInfo.anisotropyEnable = VK_TRUE;
+
+	VkPhysicalDeviceProperties deviceProperties{};
+	vkGetPhysicalDeviceProperties(mPhysicalDevice, &deviceProperties);
+	samplerInfo.maxAnisotropy = deviceProperties.limits.maxSamplerAnisotropy;
+
+	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerInfo.unnormalizedCoordinates = VK_FALSE;
+	samplerInfo.compareEnable = VK_FALSE;
+	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerInfo.mipLodBias = 0.0f;
+	samplerInfo.minLod = 0.0f;
+	samplerInfo.maxLod = 0.0f;
+
+	VkResult result = vkCreateSampler(mDevice, &samplerInfo, nullptr, &mTextureSampler);
+	ASSERT_EQ(result, VK_SUCCESS, "Failed to create texture sampler!");
+}
+
 void HelloTriangleApplication::CreateUniformBuffers()
 {
 	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
@@ -1400,6 +1432,7 @@ void HelloTriangleApplication::CleanUp()
 
 	CleanUpSwapchain();	 // framebuffers, image views, swapchain
 
+	vkDestroySampler(mDevice, mTextureSampler, nullptr);
 	vkDestroyImageView(mDevice, mTextureImageView, nullptr);
 	vkDestroyImage(mDevice, mTextureImage, nullptr);
 	vkFreeMemory(mDevice, mTextureImageMemory, nullptr);
@@ -1530,7 +1563,11 @@ bool HelloTriangleApplication::IsPhysicalDeviceSuitable(VkPhysicalDevice device)
 		swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 	}
 
-	return queueFamilyIndices.IsComplete() && extensionsSupported && swapChainAdequate;
+	VkPhysicalDeviceFeatures supportedDeviceFeatures{};
+	vkGetPhysicalDeviceFeatures(device, &supportedDeviceFeatures);
+
+	return queueFamilyIndices.IsComplete() && extensionsSupported && swapChainAdequate &&
+		   supportedDeviceFeatures.samplerAnisotropy;
 }
 
 QueueFamilyIndices HelloTriangleApplication::FindQueueFamilies(VkPhysicalDevice device)

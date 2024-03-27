@@ -82,6 +82,7 @@ private:
 	void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void CopyBufferToImage(VkBuffer buffer, VkImage image, U32 width, U32 height);
 	void CreateTextureImageView();
+	void CreateTextureSampler();
 
 	/// Uniform buffer
 	void CreateUniformBuffers();
@@ -163,6 +164,7 @@ private:
 	VkImage mTextureImage;
 	VkDeviceMemory mTextureImageMemory;
 	VkImageView mTextureImageView;
+	VkSampler mTextureSampler;
 
 	std::vector<VkBuffer> mUniformBuffers;
 	std::vector<VkDeviceMemory> mUniformBufferMemoryList;
