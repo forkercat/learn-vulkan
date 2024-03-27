@@ -71,6 +71,15 @@ private:
 	void CreateCommandPool();
 	void CreateCommandBuffers();
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, U32 imageIndex);
+	VkCommandBuffer BeginSingleTimeCommands();
+	void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
+
+	/// Texture
+	void CreateTextureImage();
+	void CreateImage(U32 width, U32 height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags,
+					 VkMemoryPropertyFlags propertyFlags, VkImage& image, VkDeviceMemory& imageMemory);
+	void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+	void CopyBufferToImage(VkBuffer buffer, VkImage image, U32 width, U32 height);
 
 	/// Uniform buffer
 	void CreateUniformBuffers();
@@ -147,6 +156,10 @@ private:
 	VkDeviceMemory mVertexBufferMemory;
 	VkBuffer mIndexBuffer;
 	VkDeviceMemory mIndexBufferMemory;
+
+	// Texture images
+	VkImage mTextureImage;
+	VkDeviceMemory mTextureImageMemory;
 
 	std::vector<VkBuffer> mUniformBuffers;
 	std::vector<VkDeviceMemory> mUniformBufferMemoryList;
