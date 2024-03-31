@@ -11,7 +11,7 @@ TabWidth: 4
 
 #AllowShortBlocksOnASingleLine: false
 #AllowShortCaseLabelsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: false
 #AllowShortLambdasOnASingleLine: All
 #AllowShortIfStatementsOnASingleLine: WithoutElse
 #AllowShortLoopsOnASingleLine: false

@@ -9,54 +9,18 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
 #include <algorithm>
 #include <chrono>
+#include <unordered_map>
 
 static const U32 kWidth = 800;
 static const U32 kHeight = 600;
 
 static const std::string kModelPath = "models/viking_room.obj";
 static const std::string kTexturePath = "textures/viking_room.png";
-
-struct Vertex
-{
-	glm::vec3 position;
-	glm::vec3 color;
-	glm::vec2 texCoord;
-
-	static VkVertexInputBindingDescription GetBindingDescription()
-	{
-		VkVertexInputBindingDescription bindingDescription{};
-		bindingDescription.binding = 0;
-		bindingDescription.stride = sizeof(Vertex);
-		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-		return bindingDescription;
-	}
-
-	static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions()
-	{
-		std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
-
-		attributeDescriptions[0].binding = 0;
-		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptions[0].offset = offsetof(Vertex, position);
-
-		attributeDescriptions[1].binding = 0;
-		attributeDescriptions[1].location = 1;
-		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-		attributeDescriptions[2].binding = 0;
-		attributeDescriptions[2].location = 2;
-		attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
-
-		return attributeDescriptions;
-	}
-};
 
 struct UniformBufferObject
 {
@@ -86,7 +50,10 @@ struct QueueFamilyIndices
 	std::optional<U32> graphicsFamily;
 	std::optional<U32> presentFamily;
 
-	bool IsComplete() { return graphicsFamily.has_value() && presentFamily.has_value(); }
+	bool IsComplete()
+	{
+		return graphicsFamily.has_value() && presentFamily.has_value();
+	}
 };
 
 struct SwapchainSupportDetails
@@ -177,6 +144,8 @@ void HelloTriangleApplication::InitVulkan()
 	CreateTextureImage();
 	CreateTextureImageView();
 	CreateTextureSampler();
+
+	LoadModel();
 
 	CreateVertexBuffer();
 	CreateIndexBuffer();
@@ -956,13 +925,13 @@ void HelloTriangleApplication::RecordCommandBuffer(VkCommandBuffer commandBuffer
 	VkBuffer vertexBuffers[] = { mVertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(commandBuffer, mIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+	vkCmdBindIndexBuffer(commandBuffer, mIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 	// Bind descriptor sets.
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipelineLayout, 0, 1,
 							&mDescriptorSets[mCurrentFrame], 0, nullptr);
 
-	vkCmdDrawIndexed(commandBuffer, static_cast<U32>(kIndexData.size()), 1, 0, 0, 0);
+	vkCmdDrawIndexed(commandBuffer, static_cast<U32>(mModelIndices.size()), 1, 0, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);
 	VkResult endResult = vkEndCommandBuffer(commandBuffer);
@@ -1010,9 +979,13 @@ void HelloTriangleApplication::UpdateUniformBuffer(U32 currentFrame)
 
 	std::chrono::time_point currentTime = std::chrono::high_resolution_clock::now();
 	F32 duration = std::chrono::duration<F32, std::chrono::seconds::period>(currentTime - startTime).count();
+	F32 rotateSpeed = 0.2f;
 
 	UniformBufferObject ubo{};
-	ubo.model = glm::rotate(glm::mat4(1.0f), duration * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	auto T = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -0.1f));
+	auto R = glm::rotate(glm::mat4(1.0f), rotateSpeed * duration * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	auto S = glm::scale(glm::mat4(1.f), glm::vec3(1.0f));
+	ubo.model = T * R * S;
 	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	F32 aspectRatio = mSwapchainExtent.width / (F32)mSwapchainExtent.height;
 	ubo.proj = glm::perspective(glm::radians(45.0f), aspectRatio, 0.1f, 10.0f);
@@ -1023,13 +996,57 @@ void HelloTriangleApplication::UpdateUniformBuffer(U32 currentFrame)
 	memcpy(mUniformBufferMappedPointers[currentFrame], &ubo, sizeof(ubo));
 }
 
+void HelloTriangleApplication::LoadModel()
+{
+	tinyobj::attrib_t attrib;
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::string warnMsg{};
+	std::string errorMsg{};
+
+	bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &warnMsg, &errorMsg, kModelPath.c_str());
+	ASSERT(loaded, "Failed to load model (%s): %s", kModelPath.c_str(), (warnMsg + errorMsg).c_str());
+
+	std::unordered_map<Vertex, U32> uniqueVertices{};
+
+	for (const tinyobj::shape_t& shape : shapes)
+	{
+		for (const tinyobj::index_t& index : shape.mesh.indices)
+		{
+			Vertex vertex{};
+
+			vertex.position = { attrib.vertices[3 * index.vertex_index + 0],
+								attrib.vertices[3 * index.vertex_index + 1],
+								attrib.vertices[3 * index.vertex_index + 2] };
+
+			vertex.texCoord = { attrib.texcoords[2 * index.texcoord_index + 0],
+								1.0f - attrib.texcoords[2 * index.texcoord_index + 1] };
+
+			vertex.color = { 1.0f, 1.0f, 1.0f };
+
+			// Vertex is not seen before.
+			if (uniqueVertices.count(vertex) == 0)
+			{
+				uniqueVertices[vertex] = static_cast<U32>(mModelVertices.size());
+				mModelVertices.push_back(vertex);
+			}
+
+			mModelIndices.push_back(uniqueVertices[vertex]);
+		}
+	}
+
+	PRINT("Loaded model: %s (#vertex=%zu | #index=%zu)", kModelPath.c_str(), mModelVertices.size(),
+		  mModelIndices.size());
+}
+
 void HelloTriangleApplication::CreateVertexBuffer()
 {
 	// We can use VERTEX_BUFFER_BIT for our vertex buffer, but it is not optimal for GPU to read data from.
 	// The most optimal one for the GPU has the DEVICE_LOCAL property bit (meaning we cannot use vkMapMemory) and is
 	// usually not accessible by the CPU.
 	// So, we need to create a staging buffer as a middle man for transferring the data.
-	VkDeviceSize bufferSize = sizeof(Vertex) * kVertexData.size();
+	VkDeviceSize bufferSize = sizeof(mModelVertices[0]) * mModelVertices.size();
+	// VkDeviceSize bufferSize = sizeof(Vertex) * kVertexData.size();
 
 	// Create the staging buffer.
 	// SRC_BIT: Buffer can be used as source in a memory operation.
@@ -1045,7 +1062,8 @@ void HelloTriangleApplication::CreateVertexBuffer()
 	// Unfortunately the driver may not immediately copy the data into the buffer memory, for example because of
 	// caching. It is also possible that writes to the buffer are not visible in the mapped memory yet.
 	// This can be resolved by setting the COHERENT bit like we did above.
-	memcpy(dstData, kVertexData.data(), (USize)bufferSize);
+	memcpy(dstData, mModelVertices.data(), (USize)bufferSize);
+	// memcpy(dstData, kVertexData.data(), (USize)bufferSize);
 	vkUnmapMemory(mDevice, stagingBufferMemory);
 
 	// Create the vertex buffer.
@@ -1060,7 +1078,10 @@ void HelloTriangleApplication::CreateVertexBuffer()
 
 void HelloTriangleApplication::CreateIndexBuffer()
 {
-	VkDeviceSize bufferSize = sizeof(kIndexData[0]) * kIndexData.size();
+	// two triangles
+	// VkDeviceSize bufferSize = sizeof(kIndexData[0]) * kIndexData.size();
+	// model
+	VkDeviceSize bufferSize = sizeof(mModelIndices[0]) * mModelIndices.size();
 
 	// Create the staging buffer.
 	VkBuffer stagingBuffer;
@@ -1072,7 +1093,8 @@ void HelloTriangleApplication::CreateIndexBuffer()
 	// Copying to GPU (memory mapping).
 	void* dstData;
 	vkMapMemory(mDevice, stagingBufferMemory, 0, bufferSize, 0, &dstData);
-	memcpy(dstData, kIndexData.data(), (USize)bufferSize);
+	// memcpy(dstData, kIndexData.data(), (USize)bufferSize);
+	memcpy(dstData, mModelIndices.data(), (USize)bufferSize);
 	vkUnmapMemory(mDevice, stagingBufferMemory);
 
 	// Create the index buffer.

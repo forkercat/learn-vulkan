@@ -15,15 +15,7 @@ int main()
 {
 	HelloTriangleApplication app;
 
-	try
-	{
-		app.Run();
-	}
-	catch (const std::exception& exception)
-	{
-		std::cerr << exception.what() << std::endl;
-		return EXIT_FAILURE;
-	}
+	app.Run();
 
 	return EXIT_SUCCESS;
 }
