@@ -9,11 +9,16 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include <tiny_obj_loader.h>
+
 #include <algorithm>
 #include <chrono>
 
 static const U32 kWidth = 800;
 static const U32 kHeight = 600;
+
+static const std::string kModelPath = "models/viking_room.obj";
+static const std::string kTexturePath = "textures/viking_room.png";
 
 struct Vertex
 {
@@ -1083,7 +1088,7 @@ void HelloTriangleApplication::CreateIndexBuffer()
 void HelloTriangleApplication::CreateTextureImage()
 {
 	int texWidth{}, texHeight{}, texChannels{};
-	stbi_uc* pixels = stbi_load("textures/Jialuo.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+	stbi_uc* pixels = stbi_load(kTexturePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 	ASSERT(pixels, "Failed to load texture image!");
 
 	// Create staging buffer for transferring.
