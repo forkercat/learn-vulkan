@@ -18,8 +18,6 @@ AllowShortFunctionsOnASingleLine: true
 
 Cpp11BracedListStyle: false
 
-AllowAllConstructorInitializersOnNextLine: true
-
 AlwaysBreakTemplateDeclarations: Yes
 
 IndentCaseLabels: true
@@ -43,3 +41,6 @@ BreakInheritanceList: BeforeColon
 BreakConstructorInitializers: BeforeColon
 PackConstructorInitializers: NextLineOnly
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
+
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true

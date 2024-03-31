@@ -10,6 +10,7 @@
 #include <GLFW/glfw3.h>
 
 #define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -54,8 +55,8 @@ private:
 
 	// Create a swapchain with swap images and queues.
 	void CreateSwapchain();
-	void CreateImageViews();
-	VkImageView CreateImageView(VkImage image, VkFormat format);
+	void CreateSwapchainImageViews();
+	VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 	// Create a render pass with subpasses that define attachment formats.
 	void CreateRenderPass();
 	// Create a descriptor set layout.
@@ -83,6 +84,10 @@ private:
 	void CopyBufferToImage(VkBuffer buffer, VkImage image, U32 width, U32 height);
 	void CreateTextureImageView();
 	void CreateTextureSampler();
+
+	/// Depth
+	void CreateDepthResources();
+	VkFormat FindDepthFormat();
 
 	/// Uniform buffer
 	void CreateUniformBuffers();
@@ -122,6 +127,9 @@ private:
 
 	static VkShaderModule CreateShaderModule(VkDevice device, const std::vector<char>& code);
 
+	static VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& formatCandidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+	static bool HasStencilComponent(VkFormat format);
+
 	static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
 
 private:
@@ -134,13 +142,18 @@ private:
 	VkQueue mGraphicsQueue;
 	VkQueue mPresentQueue;
 
-	// Swap chain
+	// Swapchain
 	VkSwapchainKHR mSwapchain;
 	VkFormat mSwapchainImageFormat;
 	VkExtent2D mSwapchainExtent;
 	std::vector<VkImage> mSwapchainImages;	// Auto destroyed when the swap chain is cleaned up.
 	std::vector<VkImageView> mSwapchainImageViews;
 	std::vector<VkFramebuffer> mSwapchainFramebuffers;
+
+	// Depth buffer
+	VkImage mDepthImage;
+	VkDeviceMemory mDepthImageMemory;
+	VkImageView mDepthImageView;
 
 	// Graphics pipeline & descriptors
 	VkRenderPass mRenderPass;
