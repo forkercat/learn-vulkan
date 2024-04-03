@@ -22,18 +22,3 @@ target_include_directories(tutorial
 PRIVATE
 	${PROJECT_SOURCE_DIR}
 )
-
-# TestApp
-add_executable(TestApp)
-
-target_sources(TestApp
-PRIVATE
-	test_app.cpp
-)
-
-target_link_libraries(TestApp
-PRIVATE
-	glfw
-	Vulkan::Vulkan
-	glm::glm
-)

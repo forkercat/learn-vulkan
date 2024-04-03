@@ -11,9 +11,9 @@ TabWidth: 4
 
 #AllowShortBlocksOnASingleLine: false
 #AllowShortCaseLabelsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: InlineOnly
 #AllowShortLambdasOnASingleLine: All
-#AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortIfStatementsOnASingleLine: false
 #AllowShortLoopsOnASingleLine: false
 
 Cpp11BracedListStyle: false

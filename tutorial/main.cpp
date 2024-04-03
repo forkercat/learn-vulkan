@@ -1,3 +1,7 @@
+//
+// Created by Junhao Wang (@forkercat) on 3/22/24.
+//
+
 #include "hello_triangle.h"
 
 #define GLFW_INCLUDE_VULKAN
@@ -9,7 +13,6 @@
 #include <glm/mat4x4.hpp>
 
 #include <iostream>
-#include <stdexcept>
 
 int main()
 {
