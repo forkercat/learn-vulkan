@@ -34,7 +34,9 @@ namespace lve {
 
 	void FirstApp::LoadModels()
 	{
-		std::vector<LveModel::Vertex> vertices{ { { 0.0f, -0.5f } }, { { 0.5f, 0.5f } }, { { -0.5f, 0.5f } } };
+		std::vector<LveModel::Vertex> vertices{ { { 0.0f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
+												{ { 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f } },
+												{ { -0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } } };
 		mModel = std::make_unique<LveModel>(mDevice, vertices);
 	}
 
@@ -105,8 +107,8 @@ namespace lve {
 
 			// Bind graphics pipeline.
 			mPipeline->Bind(mCommandBuffers[i]);
-			// TODO: Remove
-			// vkCmdDraw(mCommandBuffers[i], 3, 1, 0, 0);
+
+			// Draw
 			mModel->Bind(mCommandBuffers[i]);
 			mModel->Draw(mCommandBuffers[i]);
 
