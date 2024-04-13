@@ -65,11 +65,11 @@ namespace lve {
 
 	VkResult LveSwapchain::AcquireNextImage(U32* imageIndex)
 	{
-		// Wait on host for the previous frame to finish.
+		// Wait on host for the frame to finish.
 		vkWaitForFences(mDevice.GetDevice(), 1, &mInFlightFences[mCurrentFrame], VK_TRUE,
 						std::numeric_limits<U64>::max());  // disable timeout
 
-		// Get the next available swapchain image and signal the semaphore.
+		// Asynchronously on GPU get the next available swapchain image and signal the semaphore.
 		return vkAcquireNextImageKHR(mDevice.GetDevice(), mSwapchain, std::numeric_limits<U64>::max(),
 									 mImageAvailableSemaphores[mCurrentFrame], VK_NULL_HANDLE, imageIndex);
 	}
@@ -285,29 +285,6 @@ namespace lve {
 		ASSERT_EQ(result, VK_SUCCESS, "Failed to create render pass!");
 	}
 
-	void LveSwapchain::CreateFramebuffers()
-	{
-		mSwapchainFramebuffers.resize(mSwapchainImageViews.size());
-		PRINT("Creating %zu framebuffers...", mSwapchainFramebuffers.size());
-
-		for (USize i = 0; i < mSwapchainImageViews.size(); i++)
-		{
-			std::array<VkImageView, 2> imageViews = { mSwapchainImageViews[i], mDepthImageViews[i] };
-
-			VkFramebufferCreateInfo framebufferCreateInfo{};
-			framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			framebufferCreateInfo.renderPass = mRenderPass;
-			framebufferCreateInfo.attachmentCount = static_cast<U32>(imageViews.size());
-			framebufferCreateInfo.pAttachments = imageViews.data();
-			framebufferCreateInfo.width = mSwapchainExtent.width;
-			framebufferCreateInfo.height = mSwapchainExtent.height;
-			framebufferCreateInfo.layers = 1;
-
-			VkResult result = vkCreateFramebuffer(mDevice.GetDevice(), &framebufferCreateInfo, nullptr, &mSwapchainFramebuffers[i]);
-			ASSERT_EQ(result, VK_SUCCESS, "Failed to create framebuffers!");
-		}
-	}
-
 	void LveSwapchain::CreateDepthResources()
 	{
 		PRINT("Creating depth resources...");
@@ -320,7 +297,6 @@ namespace lve {
 
 		for (USize i = 0; i < mDepthImages.size(); i++)
 		{
-			// Image
 			VkImageCreateInfo imageInfo{};
 			imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 			imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -338,8 +314,6 @@ namespace lve {
 			imageInfo.flags = 0;
 
 			mDevice.CreateImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mDepthImages[i], mDepthImageMemorys[i]);
-
-			// Image view
 			mDepthImageViews[i] = CreateImageView(mDepthImages[i], depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 		}
 
@@ -347,6 +321,30 @@ namespace lve {
 		// the render pass.
 		// TransitionImageLayout(mDepthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED,
 		// VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	}
+
+	void LveSwapchain::CreateFramebuffers()
+	{
+		PRINT("Creating %zu framebuffers...", mSwapchainFramebuffers.size());
+
+		mSwapchainFramebuffers.resize(mSwapchainImageViews.size());
+
+		for (USize i = 0; i < mSwapchainImageViews.size(); i++)
+		{
+			std::array<VkImageView, 2> imageViews = { mSwapchainImageViews[i], mDepthImageViews[i] };
+
+			VkFramebufferCreateInfo framebufferCreateInfo{};
+			framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferCreateInfo.renderPass = mRenderPass;
+			framebufferCreateInfo.attachmentCount = static_cast<U32>(imageViews.size());
+			framebufferCreateInfo.pAttachments = imageViews.data();
+			framebufferCreateInfo.width = mSwapchainExtent.width;
+			framebufferCreateInfo.height = mSwapchainExtent.height;
+			framebufferCreateInfo.layers = 1;
+
+			VkResult result = vkCreateFramebuffer(mDevice.GetDevice(), &framebufferCreateInfo, nullptr, &mSwapchainFramebuffers[i]);
+			ASSERT_EQ(result, VK_SUCCESS, "Failed to create framebuffers!");
+		}
 	}
 
 	void LveSwapchain::CreateSyncObjects()
@@ -427,7 +425,7 @@ namespace lve {
 	{
 		if (capabilities.currentExtent.width != std::numeric_limits<U32>::max())
 		{
-			PRINT("Current extent: (%dx%d)", capabilities.currentExtent.width, capabilities.currentExtent.height);
+			PRINT("Current extent: %d x %d", capabilities.currentExtent.width, capabilities.currentExtent.height);
 			return capabilities.currentExtent;
 		}
 
@@ -436,15 +434,15 @@ namespace lve {
 		// Maybe change to get pixel size instead?
 		//
 		// int widthInPixel{}, heightInPixel{};
-		// glfwGetFramebufferSize(mWindow, &widthInPixel, &heightInPixel);
+		// glfwGetFramebufferSize(mGlfwWindow, &widthInPixel, &heightInPixel);
 		// PRINT("GLFW framebuffer size: (%dx%d)", widthInPixel, heightInPixel);
 
 		VkExtent2D actualExtent = mWindowExtent;
 		actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
 		actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
-		PRINT("Image extent width:  [%d, %d]", capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-		PRINT("Image extent height: [%d, %d]", capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+		PRINT("Image extent width range:  [%d, %d]", capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+		PRINT("Image extent height range: [%d, %d]", capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
 		return actualExtent;
 	}

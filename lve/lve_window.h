@@ -17,13 +17,12 @@ namespace lve {
 	{
 	public:
 		LveWindow(U32 width, U32 height, std::string name);
-
 		~LveWindow();
 
 		LveWindow(const LveWindow&) = delete;
 		LveWindow& operator=(const LveWindow&) = delete;
 
-		bool ShouldClose() { return glfwWindowShouldClose(mWindow); }
+		bool ShouldClose() { return glfwWindowShouldClose(mGlfwWindow); }
 		VkExtent2D GetExtent() { return { static_cast<U32>(mWidth), static_cast<U32>(mHeight) }; }
 
 		void CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
@@ -39,7 +38,7 @@ namespace lve {
 		const U32 mHeight;
 
 		std::string mWindowName;
-		GLFWwindow* mWindow;
+		GLFWwindow* mGlfwWindow;
 	};
 
 }  // namespace lve

@@ -10,6 +10,8 @@ namespace lve {
 	{
 		CreatePipelineLayout();
 		CreatePipeline();
+
+		// For now, the command buffers are created once and will be reused in frames.
 		CreateCommandBuffers();
 	}
 
@@ -45,8 +47,8 @@ namespace lve {
 
 	void FirstApp::CreatePipeline()
 	{
-		PipelineConfigInfo pipelineConfig =
-			LvePipeline::DefaultPipelineConfigInfo(mSwapchain.GetSwapchainExtent().width, mSwapchain.GetSwapchainExtent().height);
+		VkExtent2D swapchainExtent = mSwapchain.GetSwapchainExtent();
+		PipelineConfigInfo pipelineConfig = LvePipeline::DefaultPipelineConfigInfo(swapchainExtent.width, swapchainExtent.height);
 
 		pipelineConfig.renderPass = mSwapchain.GetRenderPass();
 		pipelineConfig.pipelineLayout = mPipelineLayout;
@@ -106,6 +108,12 @@ namespace lve {
 
 	void FirstApp::DrawFrame()
 	{
+		// Needs to synchronize the below calls because on GPU they are executed asynchronously.
+		// 1. Acquire an image from the swapchain.
+		// 2. Execute commands that draw onto the acquired image.
+		// 3. Present that image to the screen for presentation, returning it to the swapchain.
+		// The function calls will return before the operations are actually finished and the order of execution is also undefined.
+
 		U32 imageIndex{};
 		VkResult acquireResult = mSwapchain.AcquireNextImage(&imageIndex);
 		ASSERT(acquireResult == VK_SUCCESS || acquireResult == VK_SUBOPTIMAL_KHR, "Failed to acquire next image!");

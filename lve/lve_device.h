@@ -25,7 +25,8 @@ namespace lve {
 		bool IsComplete() { return graphicsFamily.has_value() && presentFamily.has_value(); }
 	};
 
-	// LveDevice
+	// Device class that manages Vulkan resources such as Vulkan instance, physical device,
+	// logical device, pool, surface, and queues.
 	class LveDevice
 	{
 	public:
@@ -49,12 +50,11 @@ namespace lve {
 		SwapchainSupportDetails GetSwapchainSupport() { return QuerySwapchainSupport(mPhysicalDevice); };
 		QueueFamilyIndices FindPhysicalQueueFamilies() { return FindQueueFamilies(mPhysicalDevice); }
 		U32 FindMemoryType(U32 typeFilter, VkMemoryPropertyFlags propertyFlags);
-		VkFormat FindSupportedFormat(const std::vector<VkFormat>& formatCandidates, VkImageTiling tiling,
-									 VkFormatFeatureFlags features);
+		VkFormat FindSupportedFormat(const std::vector<VkFormat>& formatCandidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
 		// Buffer helper functions
-		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags,
-						  VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags, VkBuffer& buffer,
+						  VkDeviceMemory& bufferMemory);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, U32 width, U32 height, U32 layerCount);
 
@@ -62,8 +62,8 @@ namespace lve {
 		void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
 
 		// Image helper functions
-		void CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags propertyFlags,
-								 VkImage& image, VkDeviceMemory& imageMemory);
+		void CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags propertyFlags, VkImage& image,
+								 VkDeviceMemory& imageMemory);
 
 	private:
 		// Functions to create Vulkan resources
@@ -106,8 +106,7 @@ namespace lve {
 #endif
 
 		const std::vector<const char*> mValidationLayers{ "VK_LAYER_KHRONOS_validation" };
-		const std::vector<const char*> mDeviceExtensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-														  "VK_KHR_portability_subset" };
+		const std::vector<const char*> mDeviceExtensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME, "VK_KHR_portability_subset" };
 	};
 
 }  // namespace lve

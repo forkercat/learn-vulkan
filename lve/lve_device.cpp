@@ -375,11 +375,11 @@ namespace lve {
 		// Queue families
 		QueueFamilyIndices queueFamilyData = FindQueueFamilies(mPhysicalDevice);
 
-		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+		// If the queue families are the same, then we only need to pass its index once.
 		std::set<U32> uniqueQueueFamilies = { queueFamilyData.graphicsFamily.value(),
 											  queueFamilyData.presentFamily.value() };
-		// If the queue families are the same, then we only need to pass its index once.
 
+		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 		F32 queuePriority = 1.0f;
 
 		for (U32 queueFamilyIndex : uniqueQueueFamilies)

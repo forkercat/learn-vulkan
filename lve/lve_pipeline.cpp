@@ -17,13 +17,21 @@ namespace lve {
 
 	LvePipeline::~LvePipeline()
 	{
-		vkDestroyShaderModule(mDeviceRef.GetDevice(), mFragShaderModule, nullptr);
-		vkDestroyShaderModule(mDeviceRef.GetDevice(), mVertShaderModule, nullptr);
+		if (mFragShaderModule != VK_NULL_HANDLE)
+		{
+			vkDestroyShaderModule(mDeviceRef.GetDevice(), mFragShaderModule, nullptr);
+		}
+
+		if (mVertShaderModule != VK_NULL_HANDLE)
+		{
+			vkDestroyShaderModule(mDeviceRef.GetDevice(), mVertShaderModule, nullptr);
+		}
+
 		vkDestroyPipeline(mDeviceRef.GetDevice(), mGraphicsPipeline, nullptr);
 	}
 
 	void LvePipeline::CreateGraphicsPipeline(const std::string& vertFilepath, const std::string& fragFilepath,
-											 const lve::PipelineConfigInfo& configInfo)
+											 const PipelineConfigInfo& configInfo)
 	{
 		ASSERT(configInfo.pipelineLayout, "Could not create graphics pipeline: No pipeline layout provided!");
 		ASSERT(configInfo.renderPass, "Could not create graphics pipeline: No render pass provided!");
@@ -61,6 +69,7 @@ namespace lve {
 		vertexInputInfo.vertexAttributeDescriptionCount = 0;
 		vertexInputInfo.pVertexAttributeDescriptions = nullptr;
 
+		// Viewport state info
 		VkPipelineViewportStateCreateInfo viewportInfo{};
 		viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 		viewportInfo.viewportCount = 1;
@@ -75,7 +84,7 @@ namespace lve {
 		pipelineInfo.pStages = shaderStages;
 		pipelineInfo.pVertexInputState = &vertexInputInfo;
 		pipelineInfo.pInputAssemblyState = &configInfo.inputAssemblyInfo;
-		pipelineInfo.pViewportState = &configInfo.viewportInfo;
+		pipelineInfo.pViewportState = &viewportInfo;
 		pipelineInfo.pRasterizationState = &configInfo.rasterizationInfo;
 		pipelineInfo.pMultisampleState = &configInfo.multisampleInfo;
 		pipelineInfo.pColorBlendState = &configInfo.colorBlendInfo;
@@ -89,11 +98,10 @@ namespace lve {
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
 		pipelineInfo.basePipelineIndex = -1;			   // Optional
 
-		VkResult result = vkCreateGraphicsPipelines(mDeviceRef.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
-													&mGraphicsPipeline);
+		VkResult result = vkCreateGraphicsPipelines(mDeviceRef.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mGraphicsPipeline);
 		ASSERT_EQ(result, VK_SUCCESS, "Failed to create graphics pipeline!");
 
-		// Cleanup
+		// Cleanup shader modules after pipeline creation.
 		vkDestroyShaderModule(mDeviceRef.GetDevice(), mFragShaderModule, nullptr);
 		vkDestroyShaderModule(mDeviceRef.GetDevice(), mVertShaderModule, nullptr);
 		mFragShaderModule = VK_NULL_HANDLE;
@@ -115,6 +123,7 @@ namespace lve {
 		configInfo.inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 
 		// Viewport and scissor
+		// Viewport state info is expected to be empty.
 		configInfo.viewport.x = 0.0f;
 		configInfo.viewport.y = 0.0f;
 		configInfo.viewport.width = static_cast<F32>(width);

@@ -14,7 +14,7 @@ namespace lve {
 
 	LveWindow::~LveWindow()
 	{
-		glfwDestroyWindow(mWindow);
+		glfwDestroyWindow(mGlfwWindow);
 		glfwTerminate();
 	}
 
@@ -24,14 +24,14 @@ namespace lve {
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-		mWindow = glfwCreateWindow((int)mWidth, (int)mHeight, mWindowName.c_str(), nullptr, nullptr);
+		mGlfwWindow = glfwCreateWindow((int)mWidth, (int)mHeight, mWindowName.c_str(), nullptr, nullptr);
 
-		ASSERT(mWindow, "Failed to create glfw window!");
+		ASSERT(mGlfwWindow, "Failed to create glfw window!");
 	}
 
 	void LveWindow::CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface)
 	{
-		VkResult result = glfwCreateWindowSurface(instance, mWindow, nullptr, surface);
+		VkResult result = glfwCreateWindowSurface(instance, mGlfwWindow, nullptr, surface);
 		ASSERT_EQ(result, VK_SUCCESS, "Failed to create a window surface for Vulkan!");
 	}
 

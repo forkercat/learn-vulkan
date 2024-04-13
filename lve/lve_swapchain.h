@@ -12,6 +12,8 @@
 
 namespace lve {
 
+	// Swapchain class that manages Vulkan swapchain and images, framebuffers, render passes
+	// synchronization primitives, etc.
 	class LveSwapchain
 	{
 	public:
@@ -65,9 +67,9 @@ namespace lve {
 		VkFormat mSwapchainImageFormat;
 		VkExtent2D mSwapchainExtent;
 		VkRenderPass mRenderPass;
-		std::vector<VkFramebuffer> mSwapchainFramebuffers;
 
 		// Images
+		std::vector<VkFramebuffer> mSwapchainFramebuffers;
 		std::vector<VkImage> mSwapchainImages;
 		std::vector<VkImageView> mSwapchainImageViews;
 
@@ -78,8 +80,8 @@ namespace lve {
 		// Sync
 		std::vector<VkSemaphore> mImageAvailableSemaphores;
 		std::vector<VkSemaphore> mRenderFinishedSemaphores;
-		std::vector<VkFence> mInFlightFences;
-		std::vector<VkFence> mImagesInFlight;
+		std::vector<VkFence> mInFlightFences;  // size = 2
+		std::vector<VkFence> mImagesInFlight;  // size = 3
 
 		USize mCurrentFrame = 0;
 	};

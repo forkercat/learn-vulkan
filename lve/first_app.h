@@ -22,7 +22,6 @@ namespace lve {
 		~FirstApp();
 
 		FirstApp(const FirstApp&) = delete;
-		explicit FirstApp(const std::unique_ptr<LvePipeline>& mPipeline);
 		FirstApp& operator=(const FirstApp&) = delete;
 
 		void Run();
