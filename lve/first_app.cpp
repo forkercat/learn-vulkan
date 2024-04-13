@@ -8,6 +8,7 @@ namespace lve {
 
 	FirstApp::FirstApp()
 	{
+		LoadModels();
 		CreatePipelineLayout();
 		CreatePipeline();
 
@@ -29,6 +30,12 @@ namespace lve {
 		}
 
 		vkDeviceWaitIdle(mDevice.GetDevice());
+	}
+
+	void FirstApp::LoadModels()
+	{
+		std::vector<LveModel::Vertex> vertices{ { { 0.0f, -0.5f } }, { { 0.5f, 0.5f } }, { { -0.5f, 0.5f } } };
+		mModel = std::make_unique<LveModel>(mDevice, vertices);
 	}
 
 	void FirstApp::CreatePipelineLayout()
@@ -98,7 +105,10 @@ namespace lve {
 
 			// Bind graphics pipeline.
 			mPipeline->Bind(mCommandBuffers[i]);
-			vkCmdDraw(mCommandBuffers[i], 3, 1, 0, 0);
+			// TODO: Remove
+			// vkCmdDraw(mCommandBuffers[i], 3, 1, 0, 0);
+			mModel->Bind(mCommandBuffers[i]);
+			mModel->Draw(mCommandBuffers[i]);
 
 			vkCmdEndRenderPass(mCommandBuffers[i]);
 			VkResult endResult = vkEndCommandBuffer(mCommandBuffers[i]);

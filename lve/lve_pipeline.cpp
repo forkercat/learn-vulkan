@@ -4,6 +4,8 @@
 
 #include "lve_pipeline.h"
 
+#include "lve_model.h"
+
 #include <fstream>
 
 namespace lve {
@@ -62,12 +64,15 @@ namespace lve {
 		shaderStages[1].pSpecializationInfo = nullptr;
 
 		// Vertex input info
+		auto bindingDescriptions = LveModel::Vertex::GetBindingDescriptions();
+		auto attributeDescriptions = LveModel::Vertex::GetAttributeDescriptions();
+
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertexInputInfo.vertexBindingDescriptionCount = 0;
-		vertexInputInfo.pVertexBindingDescriptions = nullptr;
-		vertexInputInfo.vertexAttributeDescriptionCount = 0;
-		vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+		vertexInputInfo.vertexBindingDescriptionCount = static_cast<U32>(bindingDescriptions.size());
+		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<U32>(attributeDescriptions.size());
+		vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
+		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 		// Viewport state info
 		VkPipelineViewportStateCreateInfo viewportInfo{};

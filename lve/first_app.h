@@ -8,6 +8,7 @@
 #include "lve_device.h"
 #include "lve_pipeline.h"
 #include "lve_swapchain.h"
+#include "lve_model.h"
 
 #include "core/core.h"
 
@@ -31,6 +32,7 @@ namespace lve {
 		static constexpr U32 sHeight = 600;
 
 	private:
+		void LoadModels();
 		void CreatePipelineLayout();
 		void CreatePipeline();
 		void CreateCommandBuffers();
@@ -44,6 +46,8 @@ namespace lve {
 		std::unique_ptr<LvePipeline> mPipeline;
 		VkPipelineLayout mPipelineLayout;
 		std::vector<VkCommandBuffer> mCommandBuffers;
+
+		std::unique_ptr<LveModel> mModel;
 	};
 
 }  // namespace lve
