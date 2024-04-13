@@ -5,12 +5,14 @@ PRIVATE
 	lve_window.cpp
 	lve_device.cpp
 	lve_pipeline.cpp
+	lve_swapchain.cpp
 	first_app.cpp
 	main.cpp
 PUBLIC
 	lve_window.h
 	lve_device.h
 	lve_pipeline.h
+	lve_swapchain.h
 	first_app.h
 )
 

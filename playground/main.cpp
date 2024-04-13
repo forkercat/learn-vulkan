@@ -10,25 +10,30 @@
 
 #include "print.h"
 
+// void Print(int val) { PRINT("Print(int)"); }
+void Print(int&& rref) { PRINT("Print(int&&)"); }
+void Print(const int&) { PRINT("Print(const int&)"); }
+
+// void Print(int& ref)
+// {
+// 	PRINT("Print(int&)");
+// }
+
 int main()
 {
-	int num = 999999;
-	int* p = &num;
+	int x = 0;
+	int& ref = x;
+	int&& rref = 1;
 
-	// void* vp = (void*) p;
-	void* vp = static_cast<void*>(p);
-	int* ip = static_cast<int*>(vp);
-	void* vpp = reinterpret_cast<void*>(p);
-	int* ipp = reinterpret_cast<int*>(vp);
+	Print(ref);	  // output: Print(int&)
+	Print(rref);  // output: Print(int&)
 
-	// double* doublePtr = static_cast<double*>(p);
-	// char* charPtr = static_cast<char*>(p);
+	Print(std::move(ref));	 // output: Print(int&&)
+	Print(std::move(rref));	 // output: Print(int&&)
 
-	double* doublePtr = (double*)p;
+	Print((int&&)ref);	 // output: Print(int&&)
 
-	// double* doublePtr = reinterpret_cast<double*>(p);
+	Print(std::move(4));
 
-	PRINT("%lf", *doublePtr);
-
-	return 0;
+	Print(4);
 }

@@ -351,7 +351,7 @@ namespace lve {
 
 		ASSERT_NEQ(deviceCount, 0, "Failed to find GPUs with Vulkan support!");
 
-		PRINT("Device count: %zu", deviceCount);
+		PRINT("Device count: %u", deviceCount);
 		std::vector<VkPhysicalDevice> devices(deviceCount);
 		vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
 
@@ -573,27 +573,31 @@ namespace lve {
 		std::vector<VkExtensionProperties> extensions(extensionCount);
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-		PRINT("Available extensions:");
+		printf("Available extensions:\n");
 		std::unordered_set<std::string> availableExtensionSet;
 
 		for (const auto& extension : extensions)
 		{
-			PRINT("\t%s", extension.extensionName);
+			printf("\t%s", extension.extensionName);
 			availableExtensionSet.insert(extension.extensionName);
 		}
 
-		PRINT("Required extensions:");
+		NEWLINE();
+
+		printf("Required extensions:\n");
 		const std::vector<const char*> requiredExtensions = GetRequiredExtensions();
 
 		for (const auto& required : requiredExtensions)
 		{
-			PRINT("\t%s", required);
+			printf("\t%s", required);
 
 			if (availableExtensionSet.find(required) == availableExtensionSet.end())
 			{
 				ERROR("Missing required GLFW extension: %s", required);
 			}
 		}
+
+		NEWLINE();
 	}
 
 	bool LveDevice::CheckDeviceExtensionSupport(VkPhysicalDevice physicalDevice)

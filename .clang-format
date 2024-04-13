@@ -8,6 +8,7 @@ AlignEscapedNewlines: Left
 UseTab: Always
 IndentWidth: 4
 TabWidth: 4
+ColumnLimit: 140
 
 #AllowShortBlocksOnASingleLine: false
 #AllowShortCaseLabelsOnASingleLine: false

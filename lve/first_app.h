@@ -5,22 +5,46 @@
 #pragma once
 
 #include "lve_window.h"
+#include "lve_device.h"
+#include "lve_pipeline.h"
+#include "lve_swapchain.h"
 
 #include "core/core.h"
+
+#include <vector>
 
 namespace lve {
 
 	class FirstApp
 	{
 	public:
+		FirstApp();
+		~FirstApp();
+
+		FirstApp(const FirstApp&) = delete;
+		explicit FirstApp(const std::unique_ptr<LvePipeline>& mPipeline);
+		FirstApp& operator=(const FirstApp&) = delete;
+
 		void Run();
 
 	public:
-		static constexpr U32 kWidth = 800;
-		static constexpr U32 kHeight = 600;
+		static constexpr U32 sWidth = 800;
+		static constexpr U32 sHeight = 600;
 
 	private:
-		LveWindow mWindow{ kWidth, kHeight, "Hello Vulkan!" };
+		void CreatePipelineLayout();
+		void CreatePipeline();
+		void CreateCommandBuffers();
+		void DrawFrame();
+
+	private:
+		LveWindow mWindow{ sWidth, sHeight, "Hello Vulkan!" };
+		LveDevice mDevice{ mWindow };
+		LveSwapchain mSwapchain{ mDevice, mWindow.GetExtent() };
+
+		std::unique_ptr<LvePipeline> mPipeline;
+		VkPipelineLayout mPipelineLayout;
+		std::vector<VkCommandBuffer> mCommandBuffers;
 	};
 
 }  // namespace lve

@@ -22,7 +22,7 @@ namespace lve {
 	{
 		std::optional<U32> graphicsFamily;
 		std::optional<U32> presentFamily;
-		bool IsComplete() { graphicsFamily.has_value() && presentFamily.has_value(); }
+		bool IsComplete() { return graphicsFamily.has_value() && presentFamily.has_value(); }
 	};
 
 	// LveDevice

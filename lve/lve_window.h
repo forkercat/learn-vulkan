@@ -24,6 +24,7 @@ namespace lve {
 		LveWindow& operator=(const LveWindow&) = delete;
 
 		bool ShouldClose() { return glfwWindowShouldClose(mWindow); }
+		VkExtent2D GetExtent() { return { static_cast<U32>(mWidth), static_cast<U32>(mHeight) }; }
 
 		void CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
 
