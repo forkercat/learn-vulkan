@@ -9,6 +9,7 @@ PRIVATE
 	lve_model.cpp
 	lve_renderer.cpp
 	lve_game_object.cpp
+	simple_render_system.cpp
 	first_app.cpp
 	main.cpp
 PUBLIC
@@ -19,6 +20,7 @@ PUBLIC
 	lve_model.h
 	lve_renderer.h
 	lve_game_object.h
+	simple_render_system.h
 	first_app.h
 )
 

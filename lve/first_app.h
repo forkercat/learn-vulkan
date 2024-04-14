@@ -8,7 +8,6 @@
 
 #include "lve_window.h"
 #include "lve_device.h"
-#include "lve_pipeline.h"
 #include "lve_renderer.h"
 #include "lve_game_object.h"
 
@@ -34,17 +33,12 @@ namespace lve {
 
 	private:
 		void LoadGameObjects();
-		void CreatePipelineLayout();
-		void CreatePipeline();
-		void RenderGameObjects(VkCommandBuffer commandBuffer);
 
 	private:
 		LveWindow mWindow{ sWidth, sHeight, "Hello Vulkan!" };
 		LveDevice mDevice{ mWindow };
 		LveRenderer mRenderer{ mWindow, mDevice };
 
-		std::unique_ptr<LvePipeline> mPipeline;
-		VkPipelineLayout mPipelineLayout;
 		std::vector<LveGameObject> mGameObjects;
 	};
 
