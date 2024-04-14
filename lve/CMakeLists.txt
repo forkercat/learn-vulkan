@@ -31,3 +31,13 @@ target_include_directories(lve-app
 PRIVATE
 	${PROJECT_SOURCE_DIR}
 )
+
+add_custom_target(
+	compile-shaders ALL
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/shaders
+	COMMAND ${CMAKE_COMMAND} -E echo "Running pre-built script to compile shaders..."
+	COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/shaders/compile.sh
+	COMMENT "Executing pre-built script..."
+)
+
+add_dependencies(lve-app compile-shaders)
