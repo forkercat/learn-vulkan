@@ -45,6 +45,12 @@ namespace lve {
 		VkResult AcquireNextImage(U32* imageIndex);
 		VkResult SubmitCommandBuffers(const VkCommandBuffer* buffers, U32* imageIndex);
 
+		bool CompareSwapchainFormats(const LveSwapchain& otherSwapchain) const
+		{
+			return mSwapchainImageFormat == otherSwapchain.mSwapchainImageFormat &&
+				   mSwapchainDepthFormat == otherSwapchain.mSwapchainDepthFormat;
+		}
+
 	private:
 		// Functions to create Vulkan resources
 		void Init();
@@ -69,6 +75,7 @@ namespace lve {
 		std::shared_ptr<LveSwapchain> mOldSwapchain;
 
 		VkFormat mSwapchainImageFormat;
+		VkFormat mSwapchainDepthFormat;
 		VkExtent2D mSwapchainExtent;
 		VkRenderPass mRenderPass;
 

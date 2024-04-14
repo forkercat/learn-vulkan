@@ -178,7 +178,15 @@ namespace lve {
 		}
 		else
 		{
-			mSwapchain = std::make_unique<LveSwapchain>(mDevice, extent, std::move(mSwapchain));
+			std::shared_ptr oldSwapchain = std::move(mSwapchain);
+			mSwapchain = std::make_unique<LveSwapchain>(mDevice, extent, oldSwapchain);
+
+			// Since we are not recreating the pipeline, we need to check if the swapchain render pass
+			// is still compatible with the color or depth format defined in the pipeline render pass.
+			if (!oldSwapchain->CompareSwapchainFormats(*mSwapchain.get()))
+			{
+				ASSERT(false, "Failed to recreate swapchain. The swapchain image or depth format has changed!");
+			}
 
 			if (mSwapchain->GetImageCount() != mCommandBuffers.size())
 			{
@@ -186,9 +194,6 @@ namespace lve {
 				CreateCommandBuffers();
 			}
 		}
-
-		// TODO: Remove this.
-		// CreatePipeline();
 	}
 
 }  // namespace lve

@@ -303,7 +303,7 @@ namespace lve {
 	{
 		PRINT("Creating depth resources...");
 
-		VkFormat depthFormat = FindDepthFormat();
+		mSwapchainDepthFormat = FindDepthFormat();
 
 		mDepthImages.resize(GetImageCount());
 		mDepthImageMemorys.resize(GetImageCount());
@@ -319,7 +319,7 @@ namespace lve {
 			imageInfo.extent.depth = 1;
 			imageInfo.mipLevels = 1;
 			imageInfo.arrayLayers = 1;
-			imageInfo.format = depthFormat;
+			imageInfo.format = mSwapchainDepthFormat;
 			imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 			imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 			imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
@@ -328,7 +328,7 @@ namespace lve {
 			imageInfo.flags = 0;
 
 			mDevice.CreateImageWithInfo(imageInfo, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mDepthImages[i], mDepthImageMemorys[i]);
-			mDepthImageViews[i] = CreateImageView(mDepthImages[i], depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+			mDepthImageViews[i] = CreateImageView(mDepthImages[i], mSwapchainDepthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 		}
 
 		// We don't need to explicitly transition the layout of the image to a depth attachment because this will be done in
