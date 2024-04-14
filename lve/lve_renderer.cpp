@@ -84,6 +84,7 @@ namespace lve {
 		}
 
 		mIsFrameStarted = false;
+		mCurrentFrameIndex = (mCurrentFrameIndex + 1) % LveSwapchain::MaxFramesInFlight;
 	}
 
 	void LveRenderer::BeginSwapchainRenderPass(VkCommandBuffer commandBuffer)
@@ -139,7 +140,7 @@ namespace lve {
 
 	void LveRenderer::CreateCommandBuffers()
 	{
-		mCommandBuffers.resize(mSwapchain->GetImageCount());
+		mCommandBuffers.resize(LveSwapchain::MaxFramesInFlight);  // 2
 
 		VkCommandBufferAllocateInfo bufferInfo{};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -186,12 +187,6 @@ namespace lve {
 			if (!oldSwapchain->CompareSwapchainFormats(*mSwapchain.get()))
 			{
 				ASSERT(false, "Failed to recreate swapchain. The swapchain image or depth format has changed!");
-			}
-
-			if (mSwapchain->GetImageCount() != mCommandBuffers.size())
-			{
-				FreeCommandBuffers();
-				CreateCommandBuffers();
 			}
 		}
 	}

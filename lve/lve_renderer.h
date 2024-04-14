@@ -33,7 +33,13 @@ namespace lve {
 		VkCommandBuffer GetCurrentCommandBuffer() const
 		{
 			ASSERT(IsFrameInProgress(), "Could not get command buffer when frame is not in progress!");
-			return mCommandBuffers[mCurrentImageIndex];
+			return mCommandBuffers[mCurrentFrameIndex];
+		}
+
+		U32 GetCurrentFrameIndex() const
+		{
+			ASSERT(IsFrameInProgress(), "Could not get current frame index when frame is not in progress!");
+			return mCurrentFrameIndex;
 		}
 
 		// Functions to render.
@@ -56,6 +62,7 @@ namespace lve {
 		std::vector<VkCommandBuffer> mCommandBuffers;
 
 		U32 mCurrentImageIndex = 0;
+		U32 mCurrentFrameIndex = 0;
 		bool mIsFrameStarted = false;
 	};
 
