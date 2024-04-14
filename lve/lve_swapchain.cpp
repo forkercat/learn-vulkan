@@ -9,6 +9,20 @@ namespace lve {
 	LveSwapchain::LveSwapchain(LveDevice& device, VkExtent2D windowExtent)
 		: mDevice(device), mWindowExtent(windowExtent)
 	{
+		Init();
+	}
+
+	LveSwapchain::LveSwapchain(LveDevice& device, VkExtent2D windowExtent, std::shared_ptr<LveSwapchain> previous)
+		: mDevice(device), mWindowExtent(windowExtent), mOldSwapchain(previous)
+	{
+		Init();
+
+		// Clean up old swapchain since it's no longer needed.
+		mOldSwapchain = nullptr;
+	}
+
+	void LveSwapchain::Init()
+	{
 		CreateSwapchain();
 		CreateImageViews();
 		CreateRenderPass();
@@ -191,7 +205,7 @@ namespace lve {
 
 		swapchainInfo.presentMode = presentMode;
 		swapchainInfo.clipped = VK_TRUE;
-		swapchainInfo.oldSwapchain = VK_NULL_HANDLE;
+		swapchainInfo.oldSwapchain = mOldSwapchain == nullptr ? VK_NULL_HANDLE : mOldSwapchain->mSwapchain;
 
 		VkResult result = vkCreateSwapchainKHR(mDevice.GetDevice(), &swapchainInfo, nullptr, &mSwapchain);
 		ASSERT_EQ(result, VK_SUCCESS, "Failed to create swapchain!");

@@ -22,9 +22,11 @@ namespace lve {
 	{
 		glfwInit();
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
 		mGlfwWindow = glfwCreateWindow((int)mWidth, (int)mHeight, mWindowName.c_str(), nullptr, nullptr);
+		glfwSetWindowUserPointer(mGlfwWindow, this);
+		glfwSetFramebufferSizeCallback(mGlfwWindow, FrameBufferResizeCallback);
 
 		ASSERT(mGlfwWindow, "Failed to create glfw window!");
 	}
@@ -33,6 +35,14 @@ namespace lve {
 	{
 		VkResult result = glfwCreateWindowSurface(instance, mGlfwWindow, nullptr, surface);
 		ASSERT_EQ(result, VK_SUCCESS, "Failed to create a window surface for Vulkan!");
+	}
+
+	void LveWindow::FrameBufferResizeCallback(GLFWwindow* window, int width, int height)
+	{
+		LveWindow* pWindow = reinterpret_cast<LveWindow*>(glfwGetWindowUserPointer(window));
+		pWindow->mFramebufferResized = true;
+		pWindow->mWidth = width;
+		pWindow->mHeight = height;
 	}
 
 }  // namespace lve

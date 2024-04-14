@@ -8,6 +8,7 @@
 
 #include "lve_device.h"
 
+#include <memory>
 #include <vector>
 
 namespace lve {
@@ -20,6 +21,7 @@ namespace lve {
 		static constexpr int MaxFramesInFlight = 2;
 
 		LveSwapchain(LveDevice& device, VkExtent2D windowExtent);
+		LveSwapchain(LveDevice& device, VkExtent2D windowExtent, std::shared_ptr<LveSwapchain> previous);
 		~LveSwapchain();
 
 		LveSwapchain(const LveSwapchain&) = delete;
@@ -45,6 +47,7 @@ namespace lve {
 
 	private:
 		// Functions to create Vulkan resources
+		void Init();
 		void CreateSwapchain();
 		void CreateImageViews();
 		void CreateDepthResources();
@@ -63,6 +66,7 @@ namespace lve {
 		LveDevice& mDevice;
 		VkExtent2D mWindowExtent;
 		VkSwapchainKHR mSwapchain;
+		std::shared_ptr<LveSwapchain> mOldSwapchain;
 
 		VkFormat mSwapchainImageFormat;
 		VkExtent2D mSwapchainExtent;
