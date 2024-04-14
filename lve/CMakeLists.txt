@@ -7,6 +7,7 @@ PRIVATE
 	lve_pipeline.cpp
 	lve_swapchain.cpp
 	lve_model.cpp
+	lve_game_object.cpp
 	first_app.cpp
 	main.cpp
 PUBLIC
@@ -15,6 +16,7 @@ PUBLIC
 	lve_pipeline.h
 	lve_swapchain.h
 	lve_model.h
+	lve_game_object.h
 	first_app.h
 )
 

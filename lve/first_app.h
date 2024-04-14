@@ -9,6 +9,7 @@
 #include "lve_pipeline.h"
 #include "lve_swapchain.h"
 #include "lve_model.h"
+#include "lve_game_object.h"
 
 #include "core/core.h"
 
@@ -32,12 +33,13 @@ namespace lve {
 		static constexpr U32 sHeight = 600;
 
 	private:
-		void LoadModels();
+		void LoadGameObjects();
 		void CreatePipelineLayout();
 		void CreatePipeline();
 		void CreateCommandBuffers();
 		void FreeCommandBuffers();
 		void RecordCommandBuffer(int imageIndex);
+		void RenderGameObjects(VkCommandBuffer commandBuffer);
 		void DrawFrame();
 
 		void RecreateSwapchain();
@@ -52,7 +54,7 @@ namespace lve {
 		VkPipelineLayout mPipelineLayout;
 		std::vector<VkCommandBuffer> mCommandBuffers;
 
-		std::unique_ptr<LveModel> mModel;
+		std::vector<LveGameObject> mGameObjects;
 	};
 
 }  // namespace lve
