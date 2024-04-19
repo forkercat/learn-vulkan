@@ -27,19 +27,19 @@ namespace lve {
 		LveRenderer& operator=(const LveRenderer&) = delete;
 
 		// Public getter.
-		VkRenderPass GetSwapchainRenderPass() const { return mSwapchain->GetRenderPass(); }
-		bool IsFrameInProgress() const { return mIsFrameStarted; }
+		VkRenderPass GetSwapchainRenderPass() const { return m_swapchain->GetRenderPass(); }
+		bool IsFrameInProgress() const { return m_isFrameStarted; }
 
 		VkCommandBuffer GetCurrentCommandBuffer() const
 		{
 			ASSERT(IsFrameInProgress(), "Could not get command buffer when frame is not in progress!");
-			return mCommandBuffers[mCurrentFrameIndex];
+			return m_commandBuffers[m_currentFrameIndex];
 		}
 
 		U32 GetCurrentFrameIndex() const
 		{
 			ASSERT(IsFrameInProgress(), "Could not get current frame index when frame is not in progress!");
-			return mCurrentFrameIndex;
+			return m_currentFrameIndex;
 		}
 
 		// Functions to render.
@@ -55,15 +55,15 @@ namespace lve {
 		void RecreateSwapchain();
 
 	private:
-		LveWindow& mWindow;
-		LveDevice& mDevice;
+		LveWindow& m_window;
+		LveDevice& m_device;
 
-		std::unique_ptr<LveSwapchain> mSwapchain;
-		std::vector<VkCommandBuffer> mCommandBuffers;
+		std::unique_ptr<LveSwapchain> m_swapchain;
+		std::vector<VkCommandBuffer> m_commandBuffers;
 
-		U32 mCurrentImageIndex = 0;
-		U32 mCurrentFrameIndex = 0;
-		bool mIsFrameStarted = false;
+		U32 m_currentImageIndex = 0;
+		U32 m_currentFrameIndex = 0;
+		bool m_isFrameStarted = false;
 	};
 
 }  // namespace lve

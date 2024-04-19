@@ -28,18 +28,18 @@ namespace lve {
 		void Run();
 
 	public:
-		static constexpr U32 sWidth = 800;
-		static constexpr U32 sHeight = 600;
+		static constexpr U32 WIDTH = 800;
+		static constexpr U32 HEIGHT = 600;
 
 	private:
 		void LoadGameObjects();
 
 	private:
-		LveWindow mWindow{ sWidth, sHeight, "Hello Vulkan!" };
-		LveDevice mDevice{ mWindow };
-		LveRenderer mRenderer{ mWindow, mDevice };
+		LveWindow m_window{ WIDTH, HEIGHT, "Hello Vulkan!" };
+		LveDevice m_device{ m_window };
+		LveRenderer m_renderer{ m_window, m_device };
 
-		std::vector<LveGameObject> mGameObjects;
+		std::vector<LveGameObject> m_gameObjects;
 	};
 
 }  // namespace lve

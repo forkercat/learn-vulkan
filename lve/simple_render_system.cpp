@@ -19,7 +19,7 @@ namespace lve {
 	};
 
 	SimpleRenderSystem::SimpleRenderSystem(LveDevice& device, VkRenderPass renderPass)
-		: mDevice(device)
+		: m_device(device)
 	{
 		CreatePipelineLayout();
 		CreatePipeline(renderPass);
@@ -27,7 +27,7 @@ namespace lve {
 
 	SimpleRenderSystem::~SimpleRenderSystem()
 	{
-		vkDestroyPipelineLayout(mDevice.GetDevice(), mPipelineLayout, nullptr);
+		vkDestroyPipelineLayout(m_device.GetDevice(), m_pipelineLayout, nullptr);
 	}
 
 	void SimpleRenderSystem::CreatePipelineLayout()
@@ -46,21 +46,21 @@ namespace lve {
 		pipelineLayoutInfo.pushConstantRangeCount = 1;
 		pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-		VkResult result = vkCreatePipelineLayout(mDevice.GetDevice(), &pipelineLayoutInfo, nullptr, &mPipelineLayout);
+		VkResult result = vkCreatePipelineLayout(m_device.GetDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout);
 		ASSERT_EQ(result, VK_SUCCESS, "Failed to create pipeline layout!");
 	}
 
 	void SimpleRenderSystem::CreatePipeline(VkRenderPass renderPass)
 	{
-		ASSERT(mPipelineLayout, "Could not create pipeline before pipeline layout!");
+		ASSERT(m_pipelineLayout, "Could not create pipeline before pipeline layout!");
 
 		PipelineConfigInfo pipelineConfig{};
 		LvePipeline::DefaultPipelineConfigInfo(pipelineConfig);
 
 		pipelineConfig.renderPass = renderPass;
-		pipelineConfig.pipelineLayout = mPipelineLayout;
-		mPipeline =
-			std::make_unique<LvePipeline>(mDevice, "shaders/simple_shader.vert.spv", "shaders/simple_shader.frag.spv", pipelineConfig);
+		pipelineConfig.pipelineLayout = m_pipelineLayout;
+		m_pipeline =
+			std::make_unique<LvePipeline>(m_device, "shaders/simple_shader.vert.spv", "shaders/simple_shader.frag.spv", pipelineConfig);
 	}
 
 	void SimpleRenderSystem::RenderGameObjects(VkCommandBuffer commandBuffer, std::vector<LveGameObject>& gameObjects)
@@ -74,7 +74,7 @@ namespace lve {
 		}
 
 		// Bind graphics pipeline.
-		mPipeline->Bind(commandBuffer);
+		m_pipeline->Bind(commandBuffer);
 
 		// Render objects.
 		for (LveGameObject& gameObject : gameObjects)
@@ -84,7 +84,7 @@ namespace lve {
 			push.color = gameObject.color;
 			push.transform = gameObject.transform2d.GetTransform();
 
-			vkCmdPushConstants(commandBuffer, mPipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+			vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
 							   sizeof(SimplePushConstantData), &push);
 
 			gameObject.model->Bind(commandBuffer);

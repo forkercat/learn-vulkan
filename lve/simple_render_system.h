@@ -31,10 +31,10 @@ namespace lve {
 		void CreatePipeline(VkRenderPass renderPass);
 
 	private:
-		LveDevice& mDevice;
+		LveDevice& m_device;
 
-		std::unique_ptr<LvePipeline> mPipeline;
-		VkPipelineLayout mPipelineLayout;
+		std::unique_ptr<LvePipeline> m_pipeline;
+		VkPipelineLayout m_pipelineLayout;
 	};
 
 }  // namespace lve

@@ -25,8 +25,8 @@ namespace lve {
 		bool IsComplete() { return graphicsFamily.has_value() && presentFamily.has_value(); }
 	};
 
-	// Device class that manages Vulkan resources such as Vulkan instance, physical device,
-	// logical device, pool, surface, and queues.
+	// Device class that manages Vulkan resources such as Vulkan instance, physical device, logical device,
+	// pool, surface, and queues. It also provides useful helper functions for buffer and image creation.
 	class LveDevice
 	{
 	public:
@@ -40,15 +40,15 @@ namespace lve {
 		LveDevice& operator=(LveDevice&&) = delete;
 
 		// Getter for Vulkan resources
-		VkCommandPool GetCommandPool() { return mCommandPool; }
-		VkDevice GetDevice() { return mDevice; }
-		VkSurfaceKHR GetSurface() { return mSurface; }
-		VkQueue GetGraphicsQueue() { return mGraphicsQueue; }
-		VkQueue GetPresentQueue() { return mGraphicsQueue; }
+		VkCommandPool GetCommandPool() { return m_commandPool; }
+		VkDevice GetDevice() { return m_device; }
+		VkSurfaceKHR GetSurface() { return m_surface; }
+		VkQueue GetGraphicsQueue() { return m_graphicsQueue; }
+		VkQueue GetPresentQueue() { return m_presentQueue; }
 
 		// Public helper functions
-		SwapchainSupportDetails GetSwapchainSupport() { return QuerySwapchainSupport(mPhysicalDevice); };
-		QueueFamilyIndices FindPhysicalQueueFamilies() { return FindQueueFamilies(mPhysicalDevice); }
+		SwapchainSupportDetails GetSwapchainSupport() { return QuerySwapchainSupport(m_physicalDevice); };
+		QueueFamilyIndices FindPhysicalQueueFamilies() { return FindQueueFamilies(m_physicalDevice); }
 		U32 FindMemoryType(U32 typeFilter, VkMemoryPropertyFlags propertyFlags);
 		VkFormat FindSupportedFormat(const std::vector<VkFormat>& formatCandidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
@@ -88,25 +88,25 @@ namespace lve {
 		VkPhysicalDeviceProperties properties;
 
 	private:
-		VkInstance mInstance;
-		VkDebugUtilsMessengerEXT mDebugMessenger;
-		VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;
-		LveWindow& mWindow;
-		VkCommandPool mCommandPool;
+		VkInstance m_instance;
+		VkDebugUtilsMessengerEXT m_debugMessenger;
+		VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
+		LveWindow& m_window;
+		VkCommandPool m_commandPool;
 
-		VkDevice mDevice;
-		VkSurfaceKHR mSurface;
-		VkQueue mGraphicsQueue;
-		VkQueue mPresentQueue;
+		VkDevice m_device;
+		VkSurfaceKHR m_surface;
+		VkQueue m_graphicsQueue;
+		VkQueue m_presentQueue;
 
 #ifdef NDBUG
-		const bool mEnableValidationLayers = false;
+		const bool m_enableValidationLayers = false;
 #else
-		const bool mEnableValidationLayers = true;
+		const bool m_enableValidationLayers = true;
 #endif
 
-		const std::vector<const char*> mValidationLayers{ "VK_LAYER_KHRONOS_validation" };
-		const std::vector<const char*> mDeviceExtensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME, "VK_KHR_portability_subset" };
+		const std::vector<const char*> m_validationLayers{ "VK_LAYER_KHRONOS_validation" };
+		const std::vector<const char*> m_deviceExtensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME, "VK_KHR_portability_subset" };
 	};
 
 }  // namespace lve

@@ -12,24 +12,24 @@ namespace lve {
 
 	LvePipeline::LvePipeline(LveDevice& device, const std::string& vertFilepath, const std::string& fragFilepath,
 							 const PipelineConfigInfo& configInfo)
-		: mDeviceRef(device)
+		: m_device(device)
 	{
 		CreateGraphicsPipeline(vertFilepath, fragFilepath, configInfo);
 	}
 
 	LvePipeline::~LvePipeline()
 	{
-		if (mFragShaderModule != VK_NULL_HANDLE)
+		if (m_fragShaderModule != VK_NULL_HANDLE)
 		{
-			vkDestroyShaderModule(mDeviceRef.GetDevice(), mFragShaderModule, nullptr);
+			vkDestroyShaderModule(m_device.GetDevice(), m_fragShaderModule, nullptr);
 		}
 
-		if (mVertShaderModule != VK_NULL_HANDLE)
+		if (m_vertShaderModule != VK_NULL_HANDLE)
 		{
-			vkDestroyShaderModule(mDeviceRef.GetDevice(), mVertShaderModule, nullptr);
+			vkDestroyShaderModule(m_device.GetDevice(), m_vertShaderModule, nullptr);
 		}
 
-		vkDestroyPipeline(mDeviceRef.GetDevice(), mGraphicsPipeline, nullptr);
+		vkDestroyPipeline(m_device.GetDevice(), m_graphicsPipeline, nullptr);
 	}
 
 	void LvePipeline::CreateGraphicsPipeline(const std::string& vertFilepath, const std::string& fragFilepath,
@@ -42,14 +42,14 @@ namespace lve {
 		// which happens when the graphics pipeline is created.
 		std::vector<char> vertexShaderCode = ReadFile(vertFilepath);
 		std::vector<char> fragmentShaderCode = ReadFile(fragFilepath);
-		CreateShaderModule(vertexShaderCode, &mVertShaderModule);
-		CreateShaderModule(fragmentShaderCode, &mFragShaderModule);
+		CreateShaderModule(vertexShaderCode, &m_vertShaderModule);
+		CreateShaderModule(fragmentShaderCode, &m_fragShaderModule);
 
 		// Shader stages
 		VkPipelineShaderStageCreateInfo shaderStages[2];
 		shaderStages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shaderStages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
-		shaderStages[0].module = mVertShaderModule;
+		shaderStages[0].module = m_vertShaderModule;
 		shaderStages[0].pName = "main";	 // entry point
 		shaderStages[0].flags = 0;
 		shaderStages[0].pNext = nullptr;
@@ -57,7 +57,7 @@ namespace lve {
 
 		shaderStages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		shaderStages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		shaderStages[1].module = mFragShaderModule;
+		shaderStages[1].module = m_fragShaderModule;
 		shaderStages[1].pName = "main";	 // entry point
 		shaderStages[1].flags = 0;
 		shaderStages[1].pNext = nullptr;
@@ -95,19 +95,19 @@ namespace lve {
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;  // Optional
 		pipelineInfo.basePipelineIndex = -1;			   // Optional
 
-		VkResult result = vkCreateGraphicsPipelines(mDeviceRef.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mGraphicsPipeline);
+		VkResult result = vkCreateGraphicsPipelines(m_device.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline);
 		ASSERT_EQ(result, VK_SUCCESS, "Failed to create graphics pipeline!");
 
 		// Cleanup shader modules after pipeline creation.
-		vkDestroyShaderModule(mDeviceRef.GetDevice(), mFragShaderModule, nullptr);
-		vkDestroyShaderModule(mDeviceRef.GetDevice(), mVertShaderModule, nullptr);
-		mFragShaderModule = VK_NULL_HANDLE;
-		mVertShaderModule = VK_NULL_HANDLE;
+		vkDestroyShaderModule(m_device.GetDevice(), m_fragShaderModule, nullptr);
+		vkDestroyShaderModule(m_device.GetDevice(), m_vertShaderModule, nullptr);
+		m_fragShaderModule = VK_NULL_HANDLE;
+		m_vertShaderModule = VK_NULL_HANDLE;
 	}
 
 	void LvePipeline::Bind(VkCommandBuffer commandBuffer)
 	{
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipeline);
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
 	}
 
 	void LvePipeline::DefaultPipelineConfigInfo(PipelineConfigInfo& configInfo)
@@ -199,7 +199,7 @@ namespace lve {
 		// the worst case alignment requirements.
 		createInfo.pCode = reinterpret_cast<const U32*>(code.data());
 
-		VkResult result = vkCreateShaderModule(mDeviceRef.GetDevice(), &createInfo, nullptr, pShaderModule);
+		VkResult result = vkCreateShaderModule(m_device.GetDevice(), &createInfo, nullptr, pShaderModule);
 		ASSERT_EQ(result, VK_SUCCESS, "Failed to create shader module!");
 	}
 

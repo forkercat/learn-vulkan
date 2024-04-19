@@ -41,10 +41,10 @@ namespace lve {
 		void CreateVertexBuffers(const std::vector<Vertex>& vertices);
 
 	private:
-		LveDevice& mDevice;
-		VkBuffer mVertexBuffer;
-		VkDeviceMemory mVertexBufferMemory;
-		U32 mVertexCount;
+		LveDevice& m_device;
+		VkBuffer m_vertexBuffer;
+		VkDeviceMemory m_vertexBufferMemory;
+		U32 m_vertexCount;
 	};
 
 }  // namespace lve

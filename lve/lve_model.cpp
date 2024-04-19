@@ -38,47 +38,47 @@ namespace lve {
 	}
 
 	LveModel::LveModel(LveDevice& device, const std::vector<Vertex>& vertices)
-		: mDevice(device)
+		: m_device(device)
 	{
 		CreateVertexBuffers(vertices);
 	}
 
 	LveModel::~LveModel()
 	{
-		vkDestroyBuffer(mDevice.GetDevice(), mVertexBuffer, nullptr);
-		vkFreeMemory(mDevice.GetDevice(), mVertexBufferMemory, nullptr);
+		vkDestroyBuffer(m_device.GetDevice(), m_vertexBuffer, nullptr);
+		vkFreeMemory(m_device.GetDevice(), m_vertexBufferMemory, nullptr);
 	}
 
 	void LveModel::Bind(VkCommandBuffer commandBuffer)
 	{
-		VkBuffer buffers[] = { mVertexBuffer };
+		VkBuffer buffers[] = { m_vertexBuffer };
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 	}
 
 	void LveModel::Draw(VkCommandBuffer commandBuffer)
 	{
-		vkCmdDraw(commandBuffer, mVertexCount, 1, 0, 0);
+		vkCmdDraw(commandBuffer, m_vertexCount, 1, 0, 0);
 	}
 
 	void LveModel::CreateVertexBuffers(const std::vector<Vertex>& vertices)
 	{
-		mVertexCount = static_cast<U32>(vertices.size());
-		ASSERT(mVertexCount >= 3, "Failed to create vertex buffer. Vertex count must be at least 3!");
+		m_vertexCount = static_cast<U32>(vertices.size());
+		ASSERT(m_vertexCount >= 3, "Failed to create vertex buffer. Vertex count must be at least 3!");
 
-		VkDeviceSize bufferSize = sizeof(vertices[0]) * mVertexCount;
+		VkDeviceSize bufferSize = sizeof(vertices[0]) * m_vertexCount;
 
-		mDevice.CreateBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-							 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, mVertexBuffer,
-							 mVertexBufferMemory);
+		m_device.CreateBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+							 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_vertexBuffer,
+							 m_vertexBufferMemory);
 
 		// Map the host memory on CPU to the device memory on GPU.
 		void* data;
-		vkMapMemory(mDevice.GetDevice(), mVertexBufferMemory, 0, bufferSize, 0, &data);
+		vkMapMemory(m_device.GetDevice(), m_vertexBufferMemory, 0, bufferSize, 0, &data);
 		// memcpy will copy the vertices data memory to the memory on CPU.
 		// Since we use COHERENT flag, the CPU memory will automatically be flushed to update GPU memory.
 		memcpy(data, vertices.data(), static_cast<USize>(bufferSize));
-		vkUnmapMemory(mDevice.GetDevice(), mVertexBufferMemory);
+		vkUnmapMemory(m_device.GetDevice(), m_vertexBufferMemory);
 	}
 
 }  // namespace lve

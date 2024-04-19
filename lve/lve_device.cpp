@@ -62,7 +62,7 @@ namespace lve {
 	/////////////////////////////////////////////////////////////////////////////////
 
 	LveDevice::LveDevice(LveWindow& window)
-		: mWindow(window)
+		: m_window(window)
 	{
 		CreateInstance();
 		SetUpDebugMessenger();
@@ -74,16 +74,16 @@ namespace lve {
 
 	LveDevice::~LveDevice()
 	{
-		vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
-		vkDestroyDevice(mDevice, nullptr);
+		vkDestroyCommandPool(m_device, m_commandPool, nullptr);
+		vkDestroyDevice(m_device, nullptr);
 
-		if (mEnableValidationLayers)
+		if (m_enableValidationLayers)
 		{
-			DestroyDebugUtilsMessengerEXT(mInstance, mDebugMessenger, nullptr);
+			DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
 		}
 
-		vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
-		vkDestroyInstance(mInstance, nullptr);
+		vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+		vkDestroyInstance(m_instance, nullptr);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////
@@ -97,7 +97,7 @@ namespace lve {
 		// The different types of memory exist within these heaps.
 
 		VkPhysicalDeviceMemoryProperties memoryProperties;
-		vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &memoryProperties);
+		vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memoryProperties);
 
 		// PRINT("Memory type count: %u | heap count: %u", memoryProperties.memoryTypeCount,
 		// memoryProperties.memoryHeapCount);
@@ -126,7 +126,7 @@ namespace lve {
 		for (const VkFormat& format : formatCandidates)
 		{
 			VkFormatProperties properties;
-			vkGetPhysicalDeviceFormatProperties(mPhysicalDevice, format, &properties);
+			vkGetPhysicalDeviceFormatProperties(m_physicalDevice, format, &properties);
 
 			if (tiling == VK_IMAGE_TILING_LINEAR && (properties.linearTilingFeatures & features) == features)
 			{
@@ -156,12 +156,12 @@ namespace lve {
 		bufferInfo.usage = usageFlags;
 		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;	 // only used by the graphics queue
 
-		VkResult bufferResult = vkCreateBuffer(mDevice, &bufferInfo, nullptr, &buffer);
+		VkResult bufferResult = vkCreateBuffer(m_device, &bufferInfo, nullptr, &buffer);
 		ASSERT_EQ(bufferResult, VK_SUCCESS, "Failed to create vertex buffer!");
 
 		// Memory allocation
 		VkMemoryRequirements memoryRequirements;
-		vkGetBufferMemoryRequirements(mDevice, buffer, &memoryRequirements);
+		vkGetBufferMemoryRequirements(m_device, buffer, &memoryRequirements);
 
 		VkMemoryAllocateInfo allocateInfo{};
 		allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -169,11 +169,11 @@ namespace lve {
 		// To be able to write to it from CPU.
 		allocateInfo.memoryTypeIndex = FindMemoryType(memoryRequirements.memoryTypeBits, propertyFlags);
 
-		VkResult allocateResult = vkAllocateMemory(mDevice, &allocateInfo, nullptr, &bufferMemory);
+		VkResult allocateResult = vkAllocateMemory(m_device, &allocateInfo, nullptr, &bufferMemory);
 		ASSERT_EQ(allocateResult, VK_SUCCESS, "Failed to allocate vertex buffer memory!");
 
 		// Bind buffer and allocation.
-		vkBindBufferMemory(mDevice, buffer, bufferMemory, 0);
+		vkBindBufferMemory(m_device, buffer, bufferMemory, 0);
 	}
 
 	void LveDevice::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
@@ -216,11 +216,11 @@ namespace lve {
 		VkCommandBufferAllocateInfo allocateInfo{};
 		allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocateInfo.commandPool = mCommandPool;
+		allocateInfo.commandPool = m_commandPool;
 		allocateInfo.commandBufferCount = 1;
 
 		VkCommandBuffer commandBuffer;
-		vkAllocateCommandBuffers(mDevice, &allocateInfo, &commandBuffer);
+		vkAllocateCommandBuffers(m_device, &allocateInfo, &commandBuffer);
 
 		VkCommandBufferBeginInfo beginInfo{};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -240,10 +240,10 @@ namespace lve {
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &commandBuffer;
 
-		vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-		vkQueueWaitIdle(mGraphicsQueue);
+		vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(m_graphicsQueue);
 
-		vkFreeCommandBuffers(mDevice, mCommandPool, 1, &commandBuffer);
+		vkFreeCommandBuffers(m_device, m_commandPool, 1, &commandBuffer);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////
@@ -253,22 +253,22 @@ namespace lve {
 	void LveDevice::CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags propertyFlags,
 										VkImage& image, VkDeviceMemory& imageMemory)
 	{
-		VkResult result = vkCreateImage(mDevice, &imageInfo, nullptr, &image);
+		VkResult result = vkCreateImage(m_device, &imageInfo, nullptr, &image);
 		ASSERT_EQ(result, VK_SUCCESS, "Failed to create image!");
 
 		// Allocate memory.
 		VkMemoryRequirements memoryRequirements;
-		vkGetImageMemoryRequirements(mDevice, image, &memoryRequirements);
+		vkGetImageMemoryRequirements(m_device, image, &memoryRequirements);
 
 		VkMemoryAllocateInfo allocateInfo{};
 		allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 		allocateInfo.allocationSize = memoryRequirements.size;
 		allocateInfo.memoryTypeIndex = FindMemoryType(memoryRequirements.memoryTypeBits, propertyFlags);
 
-		VkResult allocateResult = vkAllocateMemory(mDevice, &allocateInfo, nullptr, &imageMemory);
+		VkResult allocateResult = vkAllocateMemory(m_device, &allocateInfo, nullptr, &imageMemory);
 		ASSERT_EQ(allocateResult, VK_SUCCESS, "Failed to allocate image memory!");
 
-		VkResult bindMemoryResult = vkBindImageMemory(mDevice, image, imageMemory, 0);
+		VkResult bindMemoryResult = vkBindImageMemory(m_device, image, imageMemory, 0);
 		ASSERT_EQ(bindMemoryResult, VK_SUCCESS, "Failed to bind image memory!");
 	}
 
@@ -278,7 +278,7 @@ namespace lve {
 
 	void LveDevice::CreateInstance()
 	{
-		if (mEnableValidationLayers && !CheckValidationLayerSupport())
+		if (m_enableValidationLayers && !CheckValidationLayerSupport())
 		{
 			ASSERT(false, "Validation layers requested, but not available!");
 		}
@@ -306,10 +306,10 @@ namespace lve {
 		// Placed outside if for longer lifecycle before instance will be created.
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 
-		if (mEnableValidationLayers)
+		if (m_enableValidationLayers)
 		{
-			createInfo.enabledLayerCount = static_cast<U32>(mValidationLayers.size());
-			createInfo.ppEnabledLayerNames = mValidationLayers.data();
+			createInfo.enabledLayerCount = static_cast<U32>(m_validationLayers.size());
+			createInfo.ppEnabledLayerNames = m_validationLayers.data();
 
 			// Needed for debugging issues in the vkCreateInstance and vkDestroyInstance calls.
 			PopulateDebugMessengerCreateInfo(debugCreateInfo);
@@ -321,7 +321,7 @@ namespace lve {
 			createInfo.pNext = nullptr;
 		}
 
-		VkResult result = vkCreateInstance(&createInfo, nullptr, &mInstance);
+		VkResult result = vkCreateInstance(&createInfo, nullptr, &m_instance);
 		ASSERT_EQ(result, VK_SUCCESS, "Failed to create Vulkan instance!");
 
 		HasGlfwRequiredInstanceExtensions();
@@ -329,51 +329,51 @@ namespace lve {
 
 	void LveDevice::SetUpDebugMessenger()
 	{
-		if (mEnableValidationLayers)
+		if (m_enableValidationLayers)
 		{
 			VkDebugUtilsMessengerCreateInfoEXT createInfo{};
 			PopulateDebugMessengerCreateInfo(createInfo);
 
-			VkResult result = CreateDebugUtilsMessengerEXT(mInstance, &createInfo, nullptr, &mDebugMessenger);
+			VkResult result = CreateDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &m_debugMessenger);
 			ASSERT_EQ(result, VK_SUCCESS, "Failed to set up debug messenger!");
 		}
 	}
 
 	void LveDevice::CreateSurface()
 	{
-		mWindow.CreateWindowSurface(mInstance, &mSurface);
+		m_window.CreateWindowSurface(m_instance, &m_surface);
 	}
 
 	void LveDevice::PickPhysicalDevice()
 	{
 		U32 deviceCount{};
-		vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
+		vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
 
 		ASSERT_NEQ(deviceCount, 0, "Failed to find GPUs with Vulkan support!");
 
 		PRINT("Device count: %u", deviceCount);
 		std::vector<VkPhysicalDevice> devices(deviceCount);
-		vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
+		vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data());
 
 		for (const auto& device : devices)
 		{
 			if (IsDeviceSuitable(device))
 			{
-				mPhysicalDevice = device;
+				m_physicalDevice = device;
 				break;
 			}
 		}
 
-		ASSERT_NEQ(mPhysicalDevice, VK_NULL_HANDLE, "Failed to find a suitable GPU device!");
+		ASSERT_NEQ(m_physicalDevice, VK_NULL_HANDLE, "Failed to find a suitable GPU device!");
 
-		vkGetPhysicalDeviceProperties(mPhysicalDevice, &properties);
+		vkGetPhysicalDeviceProperties(m_physicalDevice, &properties);
 		PRINT("Physical device: %s", properties.deviceName);
 	}
 
 	void LveDevice::CreateLogicalDevice()
 	{
 		// Queue families
-		QueueFamilyIndices queueFamilyData = FindQueueFamilies(mPhysicalDevice);
+		QueueFamilyIndices queueFamilyData = FindQueueFamilies(m_physicalDevice);
 
 		// If the queue families are the same, then we only need to pass its index once.
 		std::set<U32> uniqueQueueFamilies = { queueFamilyData.graphicsFamily.value(),
@@ -402,32 +402,32 @@ namespace lve {
 		createInfo.pQueueCreateInfos = queueCreateInfos.data();
 		createInfo.pEnabledFeatures = &deviceFeatures;
 
-		createInfo.enabledExtensionCount = static_cast<U32>(mDeviceExtensions.size());
-		createInfo.ppEnabledExtensionNames = mDeviceExtensions.data();	// e.g. swap chain
+		createInfo.enabledExtensionCount = static_cast<U32>(m_deviceExtensions.size());
+		createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();	// e.g. swap chain
 
 		// Might not really be necessary anymore because device specific validation layers
 		// have been deprecated.
-		if (mEnableValidationLayers)
+		if (m_enableValidationLayers)
 		{
-			createInfo.enabledLayerCount = static_cast<U32>(mValidationLayers.size());
-			createInfo.ppEnabledLayerNames = mValidationLayers.data();
+			createInfo.enabledLayerCount = static_cast<U32>(m_validationLayers.size());
+			createInfo.ppEnabledLayerNames = m_validationLayers.data();
 		}
 		else
 		{
 			createInfo.enabledLayerCount = 0;
 		}
 
-		VkResult result = vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mDevice);
+		VkResult result = vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device);
 		ASSERT_EQ(result, VK_SUCCESS, "Failed to create logical device!");
 
 		// Fetch queue handle.
-		vkGetDeviceQueue(mDevice, queueFamilyData.graphicsFamily.value(), 0, &mGraphicsQueue);
-		vkGetDeviceQueue(mDevice, queueFamilyData.presentFamily.value(), 0, &mPresentQueue);
+		vkGetDeviceQueue(m_device, queueFamilyData.graphicsFamily.value(), 0, &m_graphicsQueue);
+		vkGetDeviceQueue(m_device, queueFamilyData.presentFamily.value(), 0, &m_presentQueue);
 	}
 
 	void LveDevice::CreateCommandPool()
 	{
-		QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(mPhysicalDevice);
+		QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(m_physicalDevice);
 
 		// We will be recording a command buffer every frame, so we want to be able to reset and
 		// record over it again.
@@ -437,7 +437,7 @@ namespace lve {
 		poolCreateInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
 		// Command buffers are executed by submitting them on one of the device queues, e.g. graphics queue.
-		VkResult result = vkCreateCommandPool(mDevice, &poolCreateInfo, nullptr, &mCommandPool);
+		VkResult result = vkCreateCommandPool(m_device, &poolCreateInfo, nullptr, &m_commandPool);
 		ASSERT_EQ(result, VK_SUCCESS, "Failed to create command pool!");
 	}
 
@@ -472,7 +472,7 @@ namespace lve {
 
 		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-		if (mEnableValidationLayers)
+		if (m_enableValidationLayers)
 		{
 			extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 		}
@@ -495,7 +495,7 @@ namespace lve {
 		vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
 		// Make sure all the layer names are present.
-		for (const char* layerName : mValidationLayers)
+		for (const char* layerName : m_validationLayers)
 		{
 			auto it = std::find_if(availableLayers.begin(), availableLayers.end(),
 								   [layerName](VkLayerProperties layerProperties) {
@@ -533,7 +533,7 @@ namespace lve {
 
 			// Present
 			VkBool32 presentSupport = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, mSurface, &presentSupport);
+			vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, queueFamilyIndex, m_surface, &presentSupport);
 
 			if (presentSupport)
 			{
@@ -608,7 +608,7 @@ namespace lve {
 		std::vector<VkExtensionProperties> availableExtensions(extensionCount);
 		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
 
-		std::set<std::string> requiredExtensions(mDeviceExtensions.begin(), mDeviceExtensions.end());
+		std::set<std::string> requiredExtensions(m_deviceExtensions.begin(), m_deviceExtensions.end());
 
 		for (const auto& extension : availableExtensions)
 		{
@@ -621,24 +621,24 @@ namespace lve {
 	SwapchainSupportDetails LveDevice::QuerySwapchainSupport(VkPhysicalDevice physicalDevice)
 	{
 		SwapchainSupportDetails details{};
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, mSurface, &details.capabilities);
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, m_surface, &details.capabilities);
 
 		U32 formatCount{};
-		vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, mSurface, &formatCount, nullptr);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, m_surface, &formatCount, nullptr);
 
 		if (formatCount != 0)
 		{
 			details.formats.resize(formatCount);
-			vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, mSurface, &formatCount, details.formats.data());
+			vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, m_surface, &formatCount, details.formats.data());
 		}
 
 		U32 presentModeCount{};
-		vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, mSurface, &presentModeCount, nullptr);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_surface, &presentModeCount, nullptr);
 
 		if (presentModeCount != 0)
 		{
 			details.presentModes.resize(presentModeCount);
-			vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, mSurface, &presentModeCount,
+			vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_surface, &presentModeCount,
 													  details.presentModes.data());
 		}
 

@@ -195,45 +195,45 @@ private:
 	static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
 
 private:
-	GLFWwindow* mWindow;
-	VkInstance mInstance;
-	VkDebugUtilsMessengerEXT mDebugMessenger;
-	VkSurfaceKHR mSurface;
-	VkPhysicalDevice mPhysicalDevice = VK_NULL_HANDLE;	// Auto destroyed when VkInstance is destroyed.
+	GLFWwindow* m_window;
+	VkInstance m_instance;
+	VkDebugUtilsMessengerEXT m_debugMessenger;
+	VkSurfaceKHR m_surface;
+	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;	// Auto destroyed when VkInstance is destroyed.
 	VkDevice mDevice;
-	VkQueue mGraphicsQueue;
-	VkQueue mPresentQueue;
+	VkQueue m_graphicsQueue;
+	VkQueue m_presentQueue;
 
 	// Swapchain
-	VkSwapchainKHR mSwapchain;
-	VkFormat mSwapchainImageFormat;
-	VkExtent2D mSwapchainExtent;
-	std::vector<VkImage> mSwapchainImages;	// Auto destroyed when the swap chain is cleaned up.
-	std::vector<VkImageView> mSwapchainImageViews;
-	std::vector<VkFramebuffer> mSwapchainFramebuffers;
+	VkSwapchainKHR m_swapchain;
+	VkFormat m_swapchainImageFormat;
+	VkExtent2D m_swapchainExtent;
+	std::vector<VkImage> m_swapchainImages;	// Auto destroyed when the swap chain is cleaned up.
+	std::vector<VkImageView> m_swapchainImageViews;
+	std::vector<VkFramebuffer> m_swapchainFramebuffers;
 
 	// Depth buffer
-	VkImage mDepthImage;
-	VkDeviceMemory mDepthImageMemory;
-	VkImageView mDepthImageView;
+	VkImage m_depthImage;
+	VkDeviceMemory m_depthImageMemory;
+	VkImageView m_depthImageView;
 
 	// Graphics pipeline & descriptors
-	VkRenderPass mRenderPass;
-	VkDescriptorSetLayout mDescriptorSetLayout;
-	VkDescriptorPool mDescriptorPool;
-	std::vector<VkDescriptorSet> mDescriptorSets;
-	VkPipelineLayout mPipelineLayout;
-	VkPipeline mGraphicsPipeline;
+	VkRenderPass m_renderPass;
+	VkDescriptorSetLayout m_descriptorSetLayout;
+	VkDescriptorPool m_descriptorPool;
+	std::vector<VkDescriptorSet> m_descriptorSets;
+	VkPipelineLayout m_pipelineLayout;
+	VkPipeline m_graphicsPipeline;
 
 	// Commands
-	VkCommandPool mCommandPool;
-	std::vector<VkCommandBuffer> mCommandBuffers;
+	VkCommandPool m_commandPool;
+	std::vector<VkCommandBuffer> m_commandBuffers;
 
 	// Buffers
-	VkBuffer mVertexBuffer;
-	VkDeviceMemory mVertexBufferMemory;
-	VkBuffer mIndexBuffer;
-	VkDeviceMemory mIndexBufferMemory;
+	VkBuffer m_vertexBuffer;
+	VkDeviceMemory m_vertexBufferMemory;
+	VkBuffer m_indexBuffer;
+	VkDeviceMemory m_indexBufferMemory;
 
 	// Texture images
 	VkImage mTextureImage;
@@ -241,14 +241,14 @@ private:
 	VkImageView mTextureImageView;
 	VkSampler mTextureSampler;
 
-	std::vector<VkBuffer> mUniformBuffers;
-	std::vector<VkDeviceMemory> mUniformBufferMemoryList;
-	std::vector<void*> mUniformBufferMappedPointers;
+	std::vector<VkBuffer> m_uniformBuffers;
+	std::vector<VkDeviceMemory> m_uniformBufferMemoryList;
+	std::vector<void*> m_uniformBufferMappedPointers;
 
 	// Synchronization
-	std::vector<VkSemaphore> mImageAvailableSemaphores;
-	std::vector<VkSemaphore> mRenderFinishedSemaphores;
-	std::vector<VkFence> mInFlightFences;
+	std::vector<VkSemaphore> m_imageAvailableSemaphores;
+	std::vector<VkSemaphore> m_renderFinishedSemaphores;
+	std::vector<VkFence> m_inFlightFences;
 
 	// Keep track of the current frame to use the right sync objects. Having multiple frames in flight enables us start
 	// rendering the next, with rendering of one frame to not interfere with the recording of the next.
@@ -257,15 +257,15 @@ private:
 	// -----------------------------------------------------------------------
 	// Records 1st frame on CPU -> Renders 1st frame on GPU -> Renders 2nd frame on GPU
 	//                          -> Records 2nd frame on CPU -> Records 1st frame on CPU
-	U32 mCurrentFrame = 0;
-	static const U32 kMaxFramesInFlight = 2;
+	U32 m_currentFrame = 0;
+	static const U32 MAX_FRAMES_IN_FLIGHT = 2;
 
 	// Handling resizes explicitly for drivers/platforms that cannot trigger VK_ERROR_OUT_OF_DATE_KHR.
-	bool mFramebufferResized = false;
+	bool m_framebufferResized = false;
 
 	// Model data
-	std::vector<Vertex> mModelVertices;
-	std::vector<U32> mModelIndices;
-	VkBuffer mModelVertexBuffer;
-	VkDeviceMemory mModelVertexBufferMemory;
+	std::vector<Vertex> m_modelVertices;
+	std::vector<U32> m_modelIndices;
+	VkBuffer m_modelVertexBuffer;
+	VkDeviceMemory m_modelVertexBufferMemory;
 };

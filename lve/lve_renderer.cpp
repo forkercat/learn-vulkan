@@ -7,9 +7,9 @@
 namespace lve {
 
 	LveRenderer::LveRenderer(LveWindow& window, LveDevice& device)
-		: mWindow(window), mDevice(device)
+		: m_window(window), m_device(device)
 	{
-		RecreateSwapchain();  // also create the pipeline
+		RecreateSwapchain();
 
 		// For now, the command buffers are created once and will be reused in frames.
 		CreateCommandBuffers();
@@ -26,7 +26,7 @@ namespace lve {
 
 	VkCommandBuffer LveRenderer::BeginFrame()
 	{
-		ASSERT(!mIsFrameStarted, "Could not call BeginFrame while already in frame progress!");
+		ASSERT(!m_isFrameStarted, "Could not call BeginFrame while already in frame progress!");
 
 		// Needs to synchronize the below calls because on GPU they are executed asynchronously.
 		// 1. Acquire an image from the swapchain.
@@ -34,7 +34,7 @@ namespace lve {
 		// 3. Present that image to the screen for presentation, returning it to the swapchain.
 		// The function calls will return before the operations are actually finished and the order of execution is also undefined.
 
-		VkResult acquireResult = mSwapchain->AcquireNextImage(&mCurrentImageIndex);
+		VkResult acquireResult = m_swapchain->AcquireNextImage(&m_currentImageIndex);
 
 		if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR)
 		{
@@ -47,9 +47,9 @@ namespace lve {
 			ASSERT(false, "Failed to acquire next image!");
 		}
 
-		mIsFrameStarted = true;
+		m_isFrameStarted = true;
 
-		VkCommandBuffer commandBuffer = GetCurrentCommandBuffer();
+		VkCommandBuffer commandBuffer = GetCurrentCommandBuffer();	// based on m_currentFrameIndex
 
 		// Begin command buffer.
 		VkCommandBufferBeginInfo bufferBeginInfo{};
@@ -63,7 +63,7 @@ namespace lve {
 
 	void LveRenderer::EndFrame()
 	{
-		ASSERT(mIsFrameStarted, "Could not call EndFrame while frame is not in progress!");
+		ASSERT(m_isFrameStarted, "Could not call EndFrame while frame is not in progress!");
 
 		VkCommandBuffer commandBuffer = GetCurrentCommandBuffer();
 
@@ -71,11 +71,11 @@ namespace lve {
 		ASSERT_EQ(endResult, VK_SUCCESS, "Failed to end command buffer!");
 
 		// Submit command buffer.
-		VkResult submitResult = mSwapchain->SubmitCommandBuffers(&commandBuffer, &mCurrentImageIndex);
+		VkResult submitResult = m_swapchain->SubmitCommandBuffers(&commandBuffer, &m_currentImageIndex);
 
-		if (submitResult == VK_ERROR_OUT_OF_DATE_KHR || submitResult == VK_SUBOPTIMAL_KHR || mWindow.WasWindowResized())
+		if (submitResult == VK_ERROR_OUT_OF_DATE_KHR || submitResult == VK_SUBOPTIMAL_KHR || m_window.WasWindowResized())
 		{
-			mWindow.ResetWindowResizedFlag();
+			m_window.ResetWindowResizedFlag();
 			RecreateSwapchain();
 		}
 		else if (submitResult != VK_SUCCESS)
@@ -83,23 +83,24 @@ namespace lve {
 			ASSERT(false, "Failed to submit command buffer!");
 		}
 
-		mIsFrameStarted = false;
-		mCurrentFrameIndex = (mCurrentFrameIndex + 1) % LveSwapchain::MaxFramesInFlight;
+		// Currently renderer and swapchain manages separate frame indices, but they are always identical.
+		m_isFrameStarted = false;
+		m_currentFrameIndex = (m_currentFrameIndex + 1) % LveSwapchain::MAX_FRAMES_IN_FLIGHT;
 	}
 
 	void LveRenderer::BeginSwapchainRenderPass(VkCommandBuffer commandBuffer)
 	{
-		ASSERT(mIsFrameStarted, "Could not begin render pass while frame is not in progress!");
+		ASSERT(m_isFrameStarted, "Could not begin render pass while frame is not in progress!");
 		ASSERT(commandBuffer == GetCurrentCommandBuffer(), "Could not begin render pass on command buffer from a different frame!");
 
 		// Begin render pass.
 		VkRenderPassBeginInfo renderPassBeginInfo{};
 		renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassBeginInfo.renderPass = mSwapchain->GetRenderPass();
-		renderPassBeginInfo.framebuffer = mSwapchain->GetFramebuffer(mCurrentImageIndex);
+		renderPassBeginInfo.renderPass = m_swapchain->GetRenderPass();
+		renderPassBeginInfo.framebuffer = m_swapchain->GetFramebuffer(m_currentImageIndex);
 
 		renderPassBeginInfo.renderArea.offset = { 0, 0 };
-		renderPassBeginInfo.renderArea.extent = mSwapchain->GetSwapchainExtent();
+		renderPassBeginInfo.renderArea.extent = m_swapchain->GetSwapchainExtent();
 
 		std::array<VkClearValue, 2> clearValues{};
 		clearValues[0].color = { { 0.01f, 0.01f, 0.01f, 1.0f } };
@@ -114,21 +115,21 @@ namespace lve {
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
-		viewport.width = static_cast<F32>(mSwapchain->GetSwapchainExtent().width);
-		viewport.height = static_cast<F32>(mSwapchain->GetSwapchainExtent().height);
+		viewport.width = static_cast<F32>(m_swapchain->GetSwapchainExtent().width);
+		viewport.height = static_cast<F32>(m_swapchain->GetSwapchainExtent().height);
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
 		VkRect2D scissor{};
 		scissor.offset = { 0, 0 };
-		scissor.extent = mSwapchain->GetSwapchainExtent();
+		scissor.extent = m_swapchain->GetSwapchainExtent();
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 	}
 
 	void LveRenderer::EndSwapchainRenderPass(VkCommandBuffer commandBuffer)
 	{
-		ASSERT(mIsFrameStarted, "Could not end render pass while frame is not in progress!");
+		ASSERT(m_isFrameStarted, "Could not end render pass while frame is not in progress!");
 		ASSERT(commandBuffer == GetCurrentCommandBuffer(), "Could not end render pass on command buffer from a different frame!");
 
 		vkCmdEndRenderPass(commandBuffer);
@@ -140,51 +141,53 @@ namespace lve {
 
 	void LveRenderer::CreateCommandBuffers()
 	{
-		mCommandBuffers.resize(LveSwapchain::MaxFramesInFlight);  // 2
+		m_commandBuffers.resize(LveSwapchain::MAX_FRAMES_IN_FLIGHT);  // 2
 
 		VkCommandBufferAllocateInfo bufferInfo{};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		bufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		bufferInfo.commandPool = mDevice.GetCommandPool();
-		bufferInfo.commandBufferCount = static_cast<U32>(mCommandBuffers.size());
+		bufferInfo.commandPool = m_device.GetCommandPool();
+		bufferInfo.commandBufferCount = static_cast<U32>(m_commandBuffers.size());
 
-		VkResult result = vkAllocateCommandBuffers(mDevice.GetDevice(), &bufferInfo, mCommandBuffers.data());
+		VkResult result = vkAllocateCommandBuffers(m_device.GetDevice(), &bufferInfo, m_commandBuffers.data());
 		ASSERT_EQ(result, VK_SUCCESS, "Failed to create command buffers!");
 	}
 
 	void LveRenderer::FreeCommandBuffers()
 	{
-		vkFreeCommandBuffers(mDevice.GetDevice(), mDevice.GetCommandPool(), static_cast<U32>(mCommandBuffers.size()),
-							 mCommandBuffers.data());
-		mCommandBuffers.clear();
+		vkFreeCommandBuffers(m_device.GetDevice(), m_device.GetCommandPool(), static_cast<U32>(m_commandBuffers.size()),
+							 m_commandBuffers.data());
+		m_commandBuffers.clear();
 	}
 
 	void LveRenderer::RecreateSwapchain()
 	{
-		VkExtent2D extent = mWindow.GetExtent();
+		VkExtent2D extent = m_window.GetExtent();
 
 		// Handles window minimization.
 		while (extent.width == 0 || extent.height == 0)
 		{
-			extent = mWindow.GetExtent();
+			extent = m_window.GetExtent();
 			glfwWaitEvents();
 		}
 
 		// Need to wait for the current swapchain not being used.
-		vkDeviceWaitIdle(mDevice.GetDevice());
+		vkDeviceWaitIdle(m_device.GetDevice());
 
-		if (mSwapchain == nullptr)
+		if (m_swapchain == nullptr)
 		{
-			mSwapchain = std::make_unique<LveSwapchain>(mDevice, extent);
+			// Happens in initialization.
+			m_swapchain = std::make_unique<LveSwapchain>(m_device, extent);
 		}
 		else
 		{
-			std::shared_ptr oldSwapchain = std::move(mSwapchain);
-			mSwapchain = std::make_unique<LveSwapchain>(mDevice, extent, oldSwapchain);
+			// Happens in swapchain recreation.
+			std::shared_ptr oldSwapchain = std::move(m_swapchain);
+			m_swapchain = std::make_unique<LveSwapchain>(m_device, extent, oldSwapchain);
 
 			// Since we are not recreating the pipeline, we need to check if the swapchain render pass
 			// is still compatible with the color or depth format defined in the pipeline render pass.
-			if (!oldSwapchain->CompareSwapchainFormats(*mSwapchain.get()))
+			if (!oldSwapchain->CompareSwapchainFormats(*m_swapchain.get()))
 			{
 				ASSERT(false, "Failed to recreate swapchain. The swapchain image or depth format has changed!");
 			}

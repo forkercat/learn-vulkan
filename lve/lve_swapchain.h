@@ -18,7 +18,7 @@ namespace lve {
 	class LveSwapchain
 	{
 	public:
-		static constexpr int MaxFramesInFlight = 2;
+		static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
 		LveSwapchain(LveDevice& device, VkExtent2D windowExtent);
 		LveSwapchain(LveDevice& device, VkExtent2D windowExtent, std::shared_ptr<LveSwapchain> previous);
@@ -28,27 +28,27 @@ namespace lve {
 		void operator=(const LveSwapchain&) = delete;
 
 		// Functions to get Vulkan resources
-		VkFramebuffer GetFramebuffer(int index) { return mSwapchainFramebuffers[index]; }
-		VkRenderPass GetRenderPass() { return mRenderPass; }
-		VkImageView GetImageView(int index) { return mSwapchainImageViews[index]; }
+		VkRenderPass GetRenderPass() { return m_renderPass; }
+		VkFramebuffer GetFramebuffer(int index) { return m_swapchainFramebuffers[index]; }
+		VkImageView GetImageView(int index) { return m_swapchainImageViews[index]; }
 
 		// Functions to get swapchain info
-		USize GetImageCount() { return mSwapchainImages.size(); }
-		VkFormat GetSwapchainImageFormat() { return mSwapchainImageFormat; }
-		VkExtent2D GetSwapchainExtent() { return mSwapchainExtent; }
-		U32 GetWidth() { return mSwapchainExtent.width; }
-		U32 GetHeight() { return mSwapchainExtent.height; }
-		F32 GetExtentAspectRatio() { return static_cast<F32>(mSwapchainExtent.width) / static_cast<F32>(mSwapchainExtent.height); }
+		USize GetImageCount() { return m_swapchainImages.size(); }
+		VkFormat GetSwapchainImageFormat() { return m_swapchainImageFormat; }
+		VkExtent2D GetSwapchainExtent() { return m_swapchainExtent; }
+		U32 GetWidth() { return m_swapchainExtent.width; }
+		U32 GetHeight() { return m_swapchainExtent.height; }
+		F32 GetExtentAspectRatio() { return static_cast<F32>(m_swapchainExtent.width) / static_cast<F32>(m_swapchainExtent.height); }
 
 		// Public functions
-		VkFormat FindDepthFormat();
 		VkResult AcquireNextImage(U32* imageIndex);
 		VkResult SubmitCommandBuffers(const VkCommandBuffer* buffers, U32* imageIndex);
+		VkFormat FindDepthFormat();
 
 		bool CompareSwapchainFormats(const LveSwapchain& otherSwapchain) const
 		{
-			return mSwapchainImageFormat == otherSwapchain.mSwapchainImageFormat &&
-				   mSwapchainDepthFormat == otherSwapchain.mSwapchainDepthFormat;
+			return m_swapchainImageFormat == otherSwapchain.m_swapchainImageFormat &&
+				   m_swapchainDepthFormat == otherSwapchain.m_swapchainDepthFormat;
 		}
 
 	private:
@@ -69,32 +69,32 @@ namespace lve {
 		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
 	private:
-		LveDevice& mDevice;
-		VkExtent2D mWindowExtent;
-		VkSwapchainKHR mSwapchain;
-		std::shared_ptr<LveSwapchain> mOldSwapchain;
+		LveDevice& m_device;
+		VkExtent2D m_windowExtent;
+		VkSwapchainKHR m_swapchain;
+		std::shared_ptr<LveSwapchain> m_oldSwapchain;
 
-		VkFormat mSwapchainImageFormat;
-		VkFormat mSwapchainDepthFormat;
-		VkExtent2D mSwapchainExtent;
-		VkRenderPass mRenderPass;
+		VkFormat m_swapchainImageFormat;
+		VkFormat m_swapchainDepthFormat;
+		VkExtent2D m_swapchainExtent;
+		VkRenderPass m_renderPass;
 
 		// Images
-		std::vector<VkFramebuffer> mSwapchainFramebuffers;
-		std::vector<VkImage> mSwapchainImages;
-		std::vector<VkImageView> mSwapchainImageViews;
+		std::vector<VkFramebuffer> m_swapchainFramebuffers;
+		std::vector<VkImage> m_swapchainImages;
+		std::vector<VkImageView> m_swapchainImageViews;
 
-		std::vector<VkImage> mDepthImages;
-		std::vector<VkDeviceMemory> mDepthImageMemorys;
-		std::vector<VkImageView> mDepthImageViews;
+		std::vector<VkImage> m_depthImages;
+		std::vector<VkDeviceMemory> m_depthImageMemorys;
+		std::vector<VkImageView> m_depthImageViews;
 
 		// Sync
-		std::vector<VkSemaphore> mImageAvailableSemaphores;
-		std::vector<VkSemaphore> mRenderFinishedSemaphores;
-		std::vector<VkFence> mInFlightFences;  // size = 2
-		std::vector<VkFence> mImagesInFlight;  // size = 3
+		std::vector<VkSemaphore> m_imageAvailableSemaphores;
+		std::vector<VkSemaphore> m_renderFinishedSemaphores;
+		std::vector<VkFence> m_inFlightFences;	// size = 2
+		std::vector<VkFence> m_imagesInFlight;	// size = 3
 
-		USize mCurrentFrame = 0;
+		USize m_currentFrame = 0;
 	};
 
 }  // namespace lve

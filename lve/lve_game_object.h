@@ -46,7 +46,7 @@ namespace lve {
 			return LveGameObject(currentId++);
 		}
 
-		id_t GetId() { return mId; }
+		id_t GetId() { return m_id; }
 
 	public:
 		std::shared_ptr<LveModel> model{};
@@ -55,12 +55,12 @@ namespace lve {
 
 	private:
 		LveGameObject(id_t objectId)
-			: mId(objectId)
+			: m_id(objectId)
 		{
 		}
 
 	private:
-		id_t mId;
+		id_t m_id;
 	};
 
 }  // namespace lve

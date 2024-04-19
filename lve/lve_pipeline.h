@@ -54,10 +54,10 @@ namespace lve {
 		static std::vector<char> ReadFile(const std::string& filepath);
 
 	private:
-		LveDevice& mDeviceRef;
-		VkPipeline mGraphicsPipeline;
-		VkShaderModule mVertShaderModule;
-		VkShaderModule mFragShaderModule;
+		LveDevice& m_device;
+		VkPipeline m_graphicsPipeline;
+		VkShaderModule m_vertShaderModule;
+		VkShaderModule m_fragShaderModule;
 	};
 
 }  // namespace lve

@@ -24,32 +24,36 @@ namespace lve {
 
 	void FirstApp::Run()
 	{
-		SimpleRenderSystem simpleRenderSystem(mDevice, mRenderer.GetSwapchainRenderPass());
+		SimpleRenderSystem simpleRenderSystem(m_device, m_renderer.GetSwapchainRenderPass());
 
-		while (!mWindow.ShouldClose())
+		while (!m_window.ShouldClose())
 		{
 			glfwPollEvents();
 
 			// Could be nullptr if, for example, the swapchain needs to be recreated.
-			if (VkCommandBuffer commandBuffer = mRenderer.BeginFrame())
+			if (VkCommandBuffer commandBuffer = m_renderer.BeginFrame())
 			{
 				// The reason why BeginFrame and BeginSwapchainRenderPass are separate functions is
 				// we want the app to control over this to enable us easily integrating multiple render passes.
+				//
+				// - BeginFrame to acquire image and begin command buffer
 				// - Begin offscreen shadow pass
-				// - Render shadow casting objects
+				// -   Render shadow casting objects
 				// - End offscreen shadow pass
+				// - Begin shading pass
+				// -   Render objects
+				// - End shading pass
 				// - Post processing...
+				m_renderer.BeginSwapchainRenderPass(commandBuffer);
 
-				mRenderer.BeginSwapchainRenderPass(commandBuffer);
-
-				simpleRenderSystem.RenderGameObjects(commandBuffer, mGameObjects);
+				simpleRenderSystem.RenderGameObjects(commandBuffer, m_gameObjects);
 				
-				mRenderer.EndSwapchainRenderPass(commandBuffer);
-				mRenderer.EndFrame();
+				m_renderer.EndSwapchainRenderPass(commandBuffer);
+				m_renderer.EndFrame();
 			}
 		}
 
-		vkDeviceWaitIdle(mDevice.GetDevice());
+		vkDeviceWaitIdle(m_device.GetDevice());
 	}
 
 	void FirstApp::LoadGameObjects()
@@ -58,7 +62,7 @@ namespace lve {
 												{ { 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f } },
 												{ { -0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } } };
 
-		auto model = std::make_shared<LveModel>(mDevice, vertices);
+		auto model = std::make_shared<LveModel>(m_device, vertices);
 
 		LveGameObject triangle = LveGameObject::CreateGameObject();
 		triangle.model = model;
@@ -68,7 +72,7 @@ namespace lve {
 		triangle.transform2d.scale = { 2.0f, 0.5f };
 		triangle.transform2d.rotation = 0.25f * glm::two_pi<F32>();
 
-		mGameObjects.push_back(std::move(triangle));
+		m_gameObjects.push_back(std::move(triangle));
 	}
 
 }  // namespace lve
