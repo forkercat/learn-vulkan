@@ -4,6 +4,11 @@
 
 #include "lve_model.h"
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
+
 namespace lve {
 
 	std::vector<VkVertexInputBindingDescription> LveModel::Vertex::GetBindingDescriptions()
@@ -69,8 +74,8 @@ namespace lve {
 		VkDeviceSize bufferSize = sizeof(vertices[0]) * m_vertexCount;
 
 		m_device.CreateBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-							 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_vertexBuffer,
-							 m_vertexBufferMemory);
+							  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_vertexBuffer,
+							  m_vertexBufferMemory);
 
 		// Map the host memory on CPU to the device memory on GPU.
 		void* data;
@@ -79,6 +84,42 @@ namespace lve {
 		// Since we use COHERENT flag, the CPU memory will automatically be flushed to update GPU memory.
 		memcpy(data, vertices.data(), static_cast<USize>(bufferSize));
 		vkUnmapMemory(m_device.GetDevice(), m_vertexBufferMemory);
+	}
+
+	UniqueRef<LveModel> LveModel::CreateSquareModel(LveDevice& device, glm::vec2 offset)
+	{
+		std::vector<Vertex> vertices = { { { -0.5f, -0.5f } }, { { 0.5f, 0.5f } },	{ { -0.5f, 0.5f } },
+										 { { -0.5f, -0.5f } }, { { 0.5f, -0.5f } }, { { 0.5f, 0.5f } } };
+
+		for (auto& v : vertices)
+		{
+			v.position += offset;
+		}
+
+		return MakeUniqueRef<LveModel>(device, vertices);
+	}
+
+	UniqueRef<LveModel> LveModel::CreateCircleModel(LveDevice& device, U32 numSides)
+	{
+		std::vector<Vertex> uniqueVertices{};
+		for (int i = 0; i < numSides; i++)
+		{
+			F32 angle = i * glm::two_pi<F32>() / numSides;
+			uniqueVertices.push_back({ { glm::cos(angle), glm::sin(angle) } });
+		}
+
+		uniqueVertices.push_back({}); // adds center vertex at 0, 0
+
+		// Makes triangles within the circle.
+		std::vector<Vertex> vertices{};
+		for (int i = 0; i < numSides; i++)
+		{
+			vertices.push_back(uniqueVertices[i]);
+			vertices.push_back(uniqueVertices[(i + 1) % numSides]);
+			vertices.push_back(uniqueVertices[numSides]);
+		}
+
+		return MakeUniqueRef<LveModel>(device, vertices);
 	}
 
 }  // namespace lve

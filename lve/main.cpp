@@ -3,10 +3,12 @@
 //
 
 #include "first_app.h"
+#include "vector_field_app.h"
 
 int main()
 {
-	lve::FirstApp app{};
+	// lve::FirstApp app{};
+	lve::VectorFieldApp app{};
 	app.Run();
 
 	return EXIT_SUCCESS;

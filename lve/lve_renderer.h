@@ -58,7 +58,7 @@ namespace lve {
 		LveWindow& m_window;
 		LveDevice& m_device;
 
-		std::unique_ptr<LveSwapchain> m_swapchain;
+		UniqueRef<LveSwapchain> m_swapchain;
 		std::vector<VkCommandBuffer> m_commandBuffers;
 
 		U32 m_currentImageIndex = 0;

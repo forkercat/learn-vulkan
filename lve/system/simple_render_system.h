@@ -6,9 +6,9 @@
 
 #include "core/core.h"
 
-#include "lve_device.h"
-#include "lve_pipeline.h"
-#include "lve_game_object.h"
+#include "lve/lve_device.h"
+#include "lve/lve_pipeline.h"
+#include "lve/lve_game_object.h"
 
 #include <vector>
 #include <memory>
@@ -33,7 +33,7 @@ namespace lve {
 	private:
 		LveDevice& m_device;
 
-		std::unique_ptr<LvePipeline> m_pipeline;
+		UniqueRef<LvePipeline> m_pipeline;
 		VkPipelineLayout m_pipelineLayout;
 	};
 

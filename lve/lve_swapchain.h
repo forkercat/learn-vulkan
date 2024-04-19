@@ -21,7 +21,7 @@ namespace lve {
 		static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
 		LveSwapchain(LveDevice& device, VkExtent2D windowExtent);
-		LveSwapchain(LveDevice& device, VkExtent2D windowExtent, std::shared_ptr<LveSwapchain> previous);
+		LveSwapchain(LveDevice& device, VkExtent2D windowExtent, Ref<LveSwapchain> previous);
 		~LveSwapchain();
 
 		LveSwapchain(const LveSwapchain&) = delete;
@@ -72,7 +72,7 @@ namespace lve {
 		LveDevice& m_device;
 		VkExtent2D m_windowExtent;
 		VkSwapchainKHR m_swapchain;
-		std::shared_ptr<LveSwapchain> m_oldSwapchain;
+		Ref<LveSwapchain> m_oldSwapchain;
 
 		VkFormat m_swapchainImageFormat;
 		VkFormat m_swapchainDepthFormat;

@@ -4,8 +4,8 @@
 
 #include "first_app.h"
 
-#include "simple_render_system.h"
-#include "rainbow_system.h"
+#include "lve/system/simple_render_system.h"
+#include "lve/system/rainbow_system.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -72,7 +72,7 @@ namespace lve {
 												{ { 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f } },
 												{ { -0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } } };
 
-		auto model = std::make_shared<LveModel>(m_device, vertices);
+		Ref<LveModel> model = MakeRef<LveModel>(m_device, vertices);
 
 		LveGameObject triangle = LveGameObject::CreateGameObject();
 		triangle.model = model;

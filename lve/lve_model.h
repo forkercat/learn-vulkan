@@ -37,6 +37,9 @@ namespace lve {
 		void Bind(VkCommandBuffer commandBuffer);
 		void Draw(VkCommandBuffer commandBuffer);
 
+		static UniqueRef<LveModel> CreateSquareModel(LveDevice& device, glm::vec2 offset);
+		static UniqueRef<LveModel> CreateCircleModel(LveDevice& device, U32 numSides);
+
 	private:
 		void CreateVertexBuffers(const std::vector<Vertex>& vertices);
 

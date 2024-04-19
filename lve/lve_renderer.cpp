@@ -177,13 +177,13 @@ namespace lve {
 		if (m_swapchain == nullptr)
 		{
 			// Happens in initialization.
-			m_swapchain = std::make_unique<LveSwapchain>(m_device, extent);
+			m_swapchain = MakeUniqueRef<LveSwapchain>(m_device, extent);
 		}
 		else
 		{
 			// Happens in swapchain recreation.
-			std::shared_ptr oldSwapchain = std::move(m_swapchain);
-			m_swapchain = std::make_unique<LveSwapchain>(m_device, extent, oldSwapchain);
+			Ref<LveSwapchain> oldSwapchain = std::move(m_swapchain);
+			m_swapchain = MakeUniqueRef<LveSwapchain>(m_device, extent, oldSwapchain);
 
 			// Since we are not recreating the pipeline, we need to check if the swapchain render pass
 			// is still compatible with the color or depth format defined in the pipeline render pass.

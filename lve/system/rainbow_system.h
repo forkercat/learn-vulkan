@@ -6,7 +6,7 @@
 
 #include "core/core.h"
 
-#include "lve_game_object.h"
+#include "lve/lve_game_object.h"
 
 #include <memory>
 #include <random>

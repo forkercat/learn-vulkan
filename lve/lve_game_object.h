@@ -12,6 +12,10 @@
 
 namespace lve {
 
+	/////////////////////////////////////////////////////////////////////////////////
+	// Components
+	/////////////////////////////////////////////////////////////////////////////////
+
 	struct Transform2dComponent
 	{
 		glm::vec2 translation{};
@@ -28,6 +32,16 @@ namespace lve {
 			return rotationMatrix * scaleMatrix;
 		}
 	};
+
+	struct RigidBody2dComponent
+	{
+		glm::vec2 velocity;
+		F32 mass{ 1.0f };
+	};
+
+	/////////////////////////////////////////////////////////////////////////////////
+	// LveGameObject
+	/////////////////////////////////////////////////////////////////////////////////
 
 	class LveGameObject
 	{
@@ -49,9 +63,12 @@ namespace lve {
 		id_t GetId() { return m_id; }
 
 	public:
-		std::shared_ptr<LveModel> model{};
+		Ref<LveModel> model{};
 		glm::vec3 color{};
+
+		// Components
 		Transform2dComponent transform2d;
+		RigidBody2dComponent rigidBody2d;
 
 	private:
 		LveGameObject(id_t objectId)
