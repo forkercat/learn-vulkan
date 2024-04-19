@@ -40,6 +40,8 @@ namespace lve {
 		LveRenderer m_renderer{ m_window, m_device };
 
 		std::vector<LveGameObject> m_gameObjects;
+
+		F64 m_elapsedTime;
 	};
 
 }  // namespace lve

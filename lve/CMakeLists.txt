@@ -21,6 +21,7 @@ PUBLIC
 	lve_renderer.h
 	lve_game_object.h
 	simple_render_system.h
+	rainbow_system.h
 	first_app.h
 )
 
