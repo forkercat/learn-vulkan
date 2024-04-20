@@ -7,11 +7,6 @@
 #include "lve/system/simple_render_system.h"
 #include "lve/system/rainbow_system.h"
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-
 namespace lve {
 
 	FirstApp::FirstApp()
@@ -29,6 +24,10 @@ namespace lve {
 		SimpleRenderSystem simpleRenderSystem(m_device, m_renderer.GetSwapchainRenderPass());
 		RainbowSystem rainbowSystem(0.4f);
 
+		LveCamera camera;
+		// camera.SetViewDirection(Vector3(0.0f), Vector3(0.5f, 0.0f, 1.0f));
+		camera.SetViewTarget(Vector3(-1.0f, -2.0f, 2.0f), Vector3(0.0f, 0.0f, 2.5f));
+
 		while (!m_window.ShouldClose())
 		{
 			// Update time.
@@ -37,6 +36,10 @@ namespace lve {
 			m_elapsedTime = newTime;
 
 			glfwPollEvents();
+
+			F32 aspect = m_renderer.GetAspectRatio();
+			// camera.SetOrthographicProjection(-aspect, aspect, -1, 1, -1, 1);
+			camera.SetPerspectiveProjection(MathOp::Radians(50.f), aspect, 0.1f, 10.f);
 
 			// Could be nullptr if, for example, the swapchain needs to be recreated.
 			if (VkCommandBuffer commandBuffer = m_renderer.BeginFrame())
@@ -56,7 +59,7 @@ namespace lve {
 
 				rainbowSystem.Update(deltaTime, m_gameObjects);
 
-				simpleRenderSystem.RenderGameObjects(commandBuffer, m_gameObjects);
+				simpleRenderSystem.RenderGameObjects(commandBuffer, m_gameObjects, camera);
 
 				m_renderer.EndSwapchainRenderPass(commandBuffer);
 				m_renderer.EndFrame();
@@ -72,8 +75,8 @@ namespace lve {
 
 		LveGameObject cube = LveGameObject::CreateGameObject();
 		cube.model = std::move(cubeModel);
-		cube.transform.translation = { 0.f, 0.f, 0.5f };
-		cube.transform.scale = glm::vec3(0.5f);
+		cube.transform.translation = { 0.f, 0.f, 2.5f };
+		cube.transform.scale = Vector3(0.5f);
 
 		m_gameObjects.push_back(std::move(cube));
 	}

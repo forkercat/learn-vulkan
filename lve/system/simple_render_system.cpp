@@ -4,17 +4,12 @@
 
 #include "simple_render_system.h"
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-
 namespace lve {
 
 	struct SimplePushConstantData
 	{
-		glm::mat4 transform{ 1.0f };
-		alignas(16) glm::vec3 color;
+		Matrix4 transform{ 1.0f };
+		alignas(16) Vector3 color;
 	};
 
 	SimpleRenderSystem::SimpleRenderSystem(LveDevice& device, VkRenderPass renderPass)
@@ -62,26 +57,29 @@ namespace lve {
 			MakeUniqueRef<LvePipeline>(m_device, "shaders/simple_shader.vert.spv", "shaders/simple_shader.frag.spv", pipelineConfig);
 	}
 
-	void SimpleRenderSystem::RenderGameObjects(VkCommandBuffer commandBuffer, std::vector<LveGameObject>& gameObjects)
+	void SimpleRenderSystem::RenderGameObjects(VkCommandBuffer commandBuffer, std::vector<LveGameObject>& gameObjects,
+											   const LveCamera& camera)
 	{
 		// Update objects.
 		int i = 0;
 		for (LveGameObject& gameObject : gameObjects)
 		{
 			i += 1;
-			gameObject.transform.rotation.y = glm::mod<F32>(gameObject.transform.rotation.y + 0.01f * i, 2.0f * glm::pi<F32>());
-			gameObject.transform.rotation.x = glm::mod<F32>(gameObject.transform.rotation.x + 0.005f * i, 2.0f * glm::pi<F32>());
+			gameObject.transform.rotation.y = glm::mod<F32>(gameObject.transform.rotation.y + 0.01f * i, 2.0f * GLM_PI);
+			gameObject.transform.rotation.x = glm::mod<F32>(gameObject.transform.rotation.x + 0.005f * i, 2.0f * GLM_PI);
 		}
 
 		// Bind graphics pipeline.
 		m_pipeline->Bind(commandBuffer);
+
+		Matrix4 projectionView = camera.GetProjection() * camera.GetView();
 
 		// Render objects.
 		for (LveGameObject& gameObject : gameObjects)
 		{
 			SimplePushConstantData push{};
 			push.color = gameObject.color;
-			push.transform = gameObject.transform.GetTransform();
+			push.transform = projectionView * gameObject.transform.GetTransform();
 
 			vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
 							   sizeof(SimplePushConstantData), &push);

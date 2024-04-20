@@ -28,6 +28,7 @@ namespace lve {
 
 		// Public getter.
 		VkRenderPass GetSwapchainRenderPass() const { return m_swapchain->GetRenderPass(); }
+		F32 GetAspectRatio() const { return m_swapchain->GetExtentAspectRatio(); }
 		bool IsFrameInProgress() const { return m_isFrameStarted; }
 
 		VkCommandBuffer GetCurrentCommandBuffer() const

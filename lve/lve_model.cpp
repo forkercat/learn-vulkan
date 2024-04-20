@@ -4,11 +4,6 @@
 
 #include "lve_model.h"
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-
 namespace lve {
 
 	std::vector<VkVertexInputBindingDescription> LveModel::Vertex::GetBindingDescriptions()
@@ -86,7 +81,7 @@ namespace lve {
 		vkUnmapMemory(m_device.GetDevice(), m_vertexBufferMemory);
 	}
 
-	UniqueRef<LveModel> LveModel::CreateCubeModel(LveDevice& device, glm::vec3 offset)
+	UniqueRef<LveModel> LveModel::CreateCubeModel(LveDevice& device, Vector3 offset)
 	{
 		// temporary helper function, creates a 1x1x1 cube centered at offset
 		std::vector<Vertex> vertices{
@@ -107,7 +102,7 @@ namespace lve {
 			{ { .5f, .5f, -.5f }, { .8f, .8f, .1f } },
 			{ { .5f, .5f, .5f }, { .8f, .8f, .1f } },
 
-			// top face (orange, remember y axis points down)
+			// top face (orange, remember y-axis points down)
 			{ { -.5f, -.5f, -.5f }, { .9f, .6f, .1f } },
 			{ { .5f, -.5f, .5f }, { .9f, .6f, .1f } },
 			{ { -.5f, -.5f, .5f }, { .9f, .6f, .1f } },
