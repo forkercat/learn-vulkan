@@ -26,7 +26,7 @@ namespace lve {
 
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributeDescriptions[0].offset = offsetof(Vertex, position);
 
 		attributeDescriptions[1].binding = 0;
@@ -86,37 +86,64 @@ namespace lve {
 		vkUnmapMemory(m_device.GetDevice(), m_vertexBufferMemory);
 	}
 
-	UniqueRef<LveModel> LveModel::CreateSquareModel(LveDevice& device, glm::vec2 offset)
+	UniqueRef<LveModel> LveModel::CreateCubeModel(LveDevice& device, glm::vec3 offset)
 	{
-		std::vector<Vertex> vertices = { { { -0.5f, -0.5f } }, { { 0.5f, 0.5f } },	{ { -0.5f, 0.5f } },
-										 { { -0.5f, -0.5f } }, { { 0.5f, -0.5f } }, { { 0.5f, 0.5f } } };
+		// temporary helper function, creates a 1x1x1 cube centered at offset
+		std::vector<Vertex> vertices{
+
+			// left face (white)
+			{ { -.5f, -.5f, -.5f }, { .9f, .9f, .9f } },
+			{ { -.5f, .5f, .5f }, { .9f, .9f, .9f } },
+			{ { -.5f, -.5f, .5f }, { .9f, .9f, .9f } },
+			{ { -.5f, -.5f, -.5f }, { .9f, .9f, .9f } },
+			{ { -.5f, .5f, -.5f }, { .9f, .9f, .9f } },
+			{ { -.5f, .5f, .5f }, { .9f, .9f, .9f } },
+
+			// right face (yellow)
+			{ { .5f, -.5f, -.5f }, { .8f, .8f, .1f } },
+			{ { .5f, .5f, .5f }, { .8f, .8f, .1f } },
+			{ { .5f, -.5f, .5f }, { .8f, .8f, .1f } },
+			{ { .5f, -.5f, -.5f }, { .8f, .8f, .1f } },
+			{ { .5f, .5f, -.5f }, { .8f, .8f, .1f } },
+			{ { .5f, .5f, .5f }, { .8f, .8f, .1f } },
+
+			// top face (orange, remember y axis points down)
+			{ { -.5f, -.5f, -.5f }, { .9f, .6f, .1f } },
+			{ { .5f, -.5f, .5f }, { .9f, .6f, .1f } },
+			{ { -.5f, -.5f, .5f }, { .9f, .6f, .1f } },
+			{ { -.5f, -.5f, -.5f }, { .9f, .6f, .1f } },
+			{ { .5f, -.5f, -.5f }, { .9f, .6f, .1f } },
+			{ { .5f, -.5f, .5f }, { .9f, .6f, .1f } },
+
+			// bottom face (red)
+			{ { -.5f, .5f, -.5f }, { .8f, .1f, .1f } },
+			{ { .5f, .5f, .5f }, { .8f, .1f, .1f } },
+			{ { -.5f, .5f, .5f }, { .8f, .1f, .1f } },
+			{ { -.5f, .5f, -.5f }, { .8f, .1f, .1f } },
+			{ { .5f, .5f, -.5f }, { .8f, .1f, .1f } },
+			{ { .5f, .5f, .5f }, { .8f, .1f, .1f } },
+
+			// nose face (blue)
+			{ { -.5f, -.5f, 0.5f }, { .1f, .1f, .8f } },
+			{ { .5f, .5f, 0.5f }, { .1f, .1f, .8f } },
+			{ { -.5f, .5f, 0.5f }, { .1f, .1f, .8f } },
+			{ { -.5f, -.5f, 0.5f }, { .1f, .1f, .8f } },
+			{ { .5f, -.5f, 0.5f }, { .1f, .1f, .8f } },
+			{ { .5f, .5f, 0.5f }, { .1f, .1f, .8f } },
+
+			// tail face (green)
+			{ { -.5f, -.5f, -0.5f }, { .1f, .8f, .1f } },
+			{ { .5f, .5f, -0.5f }, { .1f, .8f, .1f } },
+			{ { -.5f, .5f, -0.5f }, { .1f, .8f, .1f } },
+			{ { -.5f, -.5f, -0.5f }, { .1f, .8f, .1f } },
+			{ { .5f, -.5f, -0.5f }, { .1f, .8f, .1f } },
+			{ { .5f, .5f, -0.5f }, { .1f, .8f, .1f } },
+
+		};
 
 		for (auto& v : vertices)
 		{
 			v.position += offset;
-		}
-
-		return MakeUniqueRef<LveModel>(device, vertices);
-	}
-
-	UniqueRef<LveModel> LveModel::CreateCircleModel(LveDevice& device, U32 numSides)
-	{
-		std::vector<Vertex> uniqueVertices{};
-		for (int i = 0; i < numSides; i++)
-		{
-			F32 angle = i * glm::two_pi<F32>() / numSides;
-			uniqueVertices.push_back({ { glm::cos(angle), glm::sin(angle) } });
-		}
-
-		uniqueVertices.push_back({}); // adds center vertex at 0, 0
-
-		// Makes triangles within the circle.
-		std::vector<Vertex> vertices{};
-		for (int i = 0; i < numSides; i++)
-		{
-			vertices.push_back(uniqueVertices[i]);
-			vertices.push_back(uniqueVertices[(i + 1) % numSides]);
-			vertices.push_back(uniqueVertices[numSides]);
 		}
 
 		return MakeUniqueRef<LveModel>(device, vertices);

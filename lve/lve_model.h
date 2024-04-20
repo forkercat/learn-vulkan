@@ -21,7 +21,7 @@ namespace lve {
 	public:
 		struct Vertex
 		{
-			glm::vec2 position;
+			glm::vec3 position;
 			glm::vec3 color;
 
 			static std::vector<VkVertexInputBindingDescription> GetBindingDescriptions();
@@ -37,8 +37,7 @@ namespace lve {
 		void Bind(VkCommandBuffer commandBuffer);
 		void Draw(VkCommandBuffer commandBuffer);
 
-		static UniqueRef<LveModel> CreateSquareModel(LveDevice& device, glm::vec2 offset);
-		static UniqueRef<LveModel> CreateCircleModel(LveDevice& device, U32 numSides);
+		static UniqueRef<LveModel> CreateCubeModel(LveDevice& device, glm::vec3 offset);
 
 	private:
 		void CreateVertexBuffers(const std::vector<Vertex>& vertices);

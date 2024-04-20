@@ -68,21 +68,14 @@ namespace lve {
 
 	void FirstApp::LoadGameObjects()
 	{
-		std::vector<LveModel::Vertex> vertices{ { { 0.0f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
-												{ { 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f } },
-												{ { -0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } } };
+		UniqueRef<LveModel> cubeModel = LveModel::CreateCubeModel(m_device, { 0.f, 0.f, 0.f });
 
-		Ref<LveModel> model = MakeRef<LveModel>(m_device, vertices);
+		LveGameObject cube = LveGameObject::CreateGameObject();
+		cube.model = std::move(cubeModel);
+		cube.transform.translation = { 0.f, 0.f, 0.5f };
+		cube.transform.scale = glm::vec3(0.5f);
 
-		LveGameObject triangle = LveGameObject::CreateGameObject();
-		triangle.model = model;
-		triangle.color = { 0.1f, 0.8f, 0.1f };
-
-		triangle.transform2d.translation.x = 0.2f;
-		triangle.transform2d.scale = { 2.0f, 0.5f };
-		triangle.transform2d.rotation = 0.25f * glm::two_pi<F32>();
-
-		m_gameObjects.push_back(std::move(triangle));
+		m_gameObjects.push_back(std::move(cube));
 	}
 
 }  // namespace lve

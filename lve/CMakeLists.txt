@@ -11,7 +11,6 @@ PRIVATE
 	lve_game_object.cpp
 	system/simple_render_system.cpp
 	first_app.cpp
-	vector_field_app.cpp
 	main.cpp
 PUBLIC
 	lve_window.h
@@ -23,10 +22,7 @@ PUBLIC
 	lve_game_object.h
 	system/simple_render_system.h
 	system/rainbow_system.h
-	system/gravity_physics_system.h
-	system/vector_field_system.h
 	first_app.h
-	vector_field_app.h
 )
 
 target_link_libraries(lve-app
