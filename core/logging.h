@@ -23,20 +23,23 @@
 	{                                 \
 		if (exp)                      \
 			WARN(fmt, ##__VA_ARGS__); \
-	} while (0)
+	}                                 \
+	while (0)
 
 #define ERROR_IF(exp, fmt, ...)        \
 	do                                 \
 	{                                  \
 		if (exp)                       \
 			ERROR(fmt, ##__VA_ARGS__); \
-	} while (0)
+	}                                  \
+	while (0)
 
 #define DEBUG_IF(exp, fmt, ...)        \
 	do                                 \
 	{                                  \
 		if (exp)                       \
 			DEBUG(fmt, ##__VA_ARGS__); \
-	} while (0)
+	}                                  \
+	while (0)
 
 #define NEWLINE(x) printf(x "\n")

@@ -4,8 +4,25 @@
 
 #include "lve_model.h"
 
+#include "lve_utils.h"
+
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
+
+namespace std
+{
+	template <>
+	struct hash<lve::LveModel::Vertex>
+	{
+		size_t operator()(const lve::LveModel::Vertex& vertex) const
+		{
+			size_t seed = 0;
+			lve::HashCombine(seed, vertex.position, vertex.color, vertex.normal, vertex.uv);
+			return seed;
+		}
+	};
+
+} // namespace std
 
 namespace lve
 {
@@ -252,6 +269,9 @@ namespace lve
 		vertices.clear();
 		indices.clear();
 
+		// [Vertex: Index]
+		std::unordered_map<Vertex, U32> uniqueVertices{};
+
 		for (const shape_t& shape : shapes)
 		{
 			for (const index_t& index : shape.mesh.indices)
@@ -299,7 +319,15 @@ namespace lve
 					};
 				}
 
-				vertices.push_back(std::move(vertex));
+				// Encounter new vertex. Only add to vertices when it is not yet added.
+				if (uniqueVertices.count(vertex) == 0)
+				{
+					U32 vertexIndex = static_cast<U32>(vertices.size());
+					uniqueVertices[vertex] = vertexIndex;
+					vertices.push_back(vertex);
+				}
+
+				indices.push_back(uniqueVertices[vertex]);
 			}
 		}
 	}

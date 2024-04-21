@@ -9,6 +9,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/constants.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 
 // Type definitions
 
@@ -36,8 +38,8 @@ using Matrix3x2 = glm::mat3x2;
 
 // Math operations
 
-namespace MathOp {
-
+namespace MathOp
+{
 	inline F32 Radians(F32 degrees)
 	{
 		return glm::radians(degrees);
@@ -99,4 +101,4 @@ namespace MathOp {
 		return glm::max(v1, v2);
 	}
 
-}  // namespace MathOp
+} // namespace MathOp

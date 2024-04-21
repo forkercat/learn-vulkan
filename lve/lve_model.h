@@ -24,6 +24,11 @@ namespace lve
 
 			static std::vector<VkVertexInputBindingDescription> GetBindingDescriptions();
 			static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
+
+			bool operator==(const Vertex& other) const
+			{
+				return position == other.position && color == other.color && normal == other.normal && uv == other.uv;
+			}
 		};
 
 		struct Builder

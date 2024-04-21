@@ -23,6 +23,7 @@ PUBLIC
 	lve_renderer.h
 	lve_game_object.h
 	lve_camera.h
+	lve_utils.h
 	keyboard_movement_controller.h
 	system/simple_render_system.h
 	system/rainbow_system.h
