@@ -14,8 +14,8 @@
 #include <vector>
 #include <memory>
 
-namespace lve {
-
+namespace lve
+{
 	class SimpleRenderSystem
 	{
 	public:
@@ -38,4 +38,4 @@ namespace lve {
 		VkPipelineLayout m_pipelineLayout;
 	};
 
-}  // namespace lve
+} // namespace lve

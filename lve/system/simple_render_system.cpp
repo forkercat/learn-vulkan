@@ -4,12 +4,12 @@
 
 #include "simple_render_system.h"
 
-namespace lve {
-
+namespace lve
+{
 	struct SimplePushConstantData
 	{
 		Matrix4 transform{ 1.0f };
-		alignas(16) Vector3 color;
+		Matrix4 normalMatrix{ 1.0f };
 	};
 
 	SimpleRenderSystem::SimpleRenderSystem(LveDevice& device, VkRenderPass renderPass)
@@ -58,7 +58,7 @@ namespace lve {
 	}
 
 	void SimpleRenderSystem::RenderGameObjects(VkCommandBuffer commandBuffer, std::vector<LveGameObject>& gameObjects,
-											   const LveCamera& camera)
+		const LveCamera& camera)
 	{
 		// Bind graphics pipeline.
 		m_pipeline->Bind(commandBuffer);
@@ -69,15 +69,17 @@ namespace lve {
 		for (LveGameObject& gameObject : gameObjects)
 		{
 			SimplePushConstantData push{};
-			push.color = gameObject.color;
-			push.transform = projectionView * gameObject.transform.GetTransform();
+
+			Matrix4 modelMatrix = gameObject.transform.GetTransform();
+			push.transform = projectionView * modelMatrix;
+			push.normalMatrix = gameObject.transform.GetNormalMatrix(); // glm automatically converts from mat4 to mat3
 
 			vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
-							   sizeof(SimplePushConstantData), &push);
+				sizeof(SimplePushConstantData), &push);
 
 			gameObject.model->Bind(commandBuffer);
 			gameObject.model->Draw(commandBuffer);
 		}
 	}
 
-}  // namespace lve
+} // namespace lve

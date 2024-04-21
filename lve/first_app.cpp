@@ -81,14 +81,21 @@ namespace lve
 		// UniqueRef<LveModel> model = LveModel::CreateCubeModel(m_device, { 0.f, 0.f, 0.f });
 
 		// Model
-		UniqueRef<LveModel> model = LveModel::CreateModelFromFile(m_device, "models/smooth_vase.obj");
+		UniqueRef<LveModel> smoothModel = LveModel::CreateModelFromFile(m_device, "models/smooth_vase.obj");
+		UniqueRef<LveModel> flatModel = LveModel::CreateModelFromFile(m_device, "models/flat_vase.obj");
 
 		LveGameObject gameObject = LveGameObject::CreateGameObject();
-		gameObject.model = std::move(model);
-		gameObject.transform.translation = { 0.0f, 0.0f, 3.0f };
+		gameObject.model = std::move(smoothModel);
+		gameObject.transform.translation = { -0.5f, 0.0f, 3.0f };
 		gameObject.transform.scale = Vector3(2.0f);
 
+		LveGameObject gameObject2 = LveGameObject::CreateGameObject();
+		gameObject2.model = std::move(flatModel);
+		gameObject2.transform.translation = { 0.5f, 0.0f, 3.0f };
+		gameObject2.transform.scale = Vector3(2.0f);
+
 		m_gameObjects.push_back(std::move(gameObject));
+		m_gameObjects.push_back(std::move(gameObject2));
 	}
 
 } // namespace lve
