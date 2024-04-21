@@ -6,8 +6,8 @@
 
 #include "core/core.h"
 
-namespace lve {
-
+namespace lve
+{
 	class LveCamera
 	{
 	public:
@@ -26,4 +26,4 @@ namespace lve {
 		Matrix4 m_viewMatrix{ 1.0f };
 	};
 
-}  // namespace lve
+} // namespace lve

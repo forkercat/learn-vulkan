@@ -10,8 +10,8 @@
 
 #include <memory>
 
-namespace lve {
-
+namespace lve
+{
 	/////////////////////////////////////////////////////////////////////////////////
 	// Components
 	/////////////////////////////////////////////////////////////////////////////////
@@ -33,25 +33,27 @@ namespace lve {
 			const float s2 = MathOp::Sin(rotation.x);
 			const float c1 = MathOp::Cos(rotation.y);
 			const float s1 = MathOp::Sin(rotation.y);
-			return Matrix4{ {
-								scale.x * (c1 * c3 + s1 * s2 * s3),
-								scale.x * (c2 * s3),
-								scale.x * (c1 * s2 * s3 - c3 * s1),
-								0.0f,
-							},
-							{
-								scale.y * (c3 * s1 * s2 - c1 * s3),
-								scale.y * (c2 * c3),
-								scale.y * (c1 * c3 * s2 + s1 * s3),
-								0.0f,
-							},
-							{
-								scale.z * (c2 * s1),
-								scale.z * (-s2),
-								scale.z * (c1 * c2),
-								0.0f,
-							},
-							{ translation.x, translation.y, translation.z, 1.0f } };
+			return Matrix4{
+				{
+					scale.x * (c1 * c3 + s1 * s2 * s3),
+					scale.x * (c2 * s3),
+					scale.x * (c1 * s2 * s3 - c3 * s1),
+					0.0f,
+				},
+				{
+					scale.y * (c3 * s1 * s2 - c1 * s3),
+					scale.y * (c2 * c3),
+					scale.y * (c1 * c3 * s2 + s1 * s3),
+					0.0f,
+				},
+				{
+					scale.z * (c2 * s1),
+					scale.z * (-s2),
+					scale.z * (c1 * c2),
+					0.0f,
+				},
+				{ translation.x, translation.y, translation.z, 1.0f }
+			};
 		}
 	};
 
@@ -95,4 +97,4 @@ namespace lve {
 		id_t m_id;
 	};
 
-}  // namespace lve
+} // namespace lve

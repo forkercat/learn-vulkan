@@ -14,8 +14,8 @@
 #include <vector>
 #include <memory>
 
-namespace lve {
-
+namespace lve
+{
 	// Renderer class that manages swapchain and command buffers.
 	class LveRenderer
 	{
@@ -67,4 +67,4 @@ namespace lve {
 		bool m_isFrameStarted = false;
 	};
 
-}  // namespace lve
+} // namespace lve

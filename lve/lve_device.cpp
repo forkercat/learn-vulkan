@@ -7,28 +7,28 @@
 #include <unordered_set>
 #include <set>
 
-namespace lve {
-
+namespace lve
+{
 	/////////////////////////////////////////////////////////////////////////////////
 	// Local callback functions
 	/////////////////////////////////////////////////////////////////////////////////
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-														VkDebugUtilsMessageTypeFlagsEXT messageType,
-														const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-														void* pUserData)
+		VkDebugUtilsMessageTypeFlagsEXT messageType,
+		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+		void* pUserData)
 	{
 		DEBUG("Validation Output: %s", pCallbackData->pMessage);
-		return VK_FALSE;  // Original Vulkan call is not aborted
+		return VK_FALSE; // Original Vulkan call is not aborted
 	}
 
 	// Proxy functions to create and destroy debug messenger.
 	// Since this function is an extension function, it is not automatically loaded.
 	// We have to look up its address ourselves.
 	static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance,
-												 const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-												 const VkAllocationCallbacks* pAllocator,
-												 VkDebugUtilsMessengerEXT* pDebugMessenger)
+		const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+		const VkAllocationCallbacks* pAllocator,
+		VkDebugUtilsMessengerEXT* pDebugMessenger)
 	{
 		auto func =
 			(PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
@@ -44,7 +44,7 @@ namespace lve {
 	}
 
 	static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
-											  const VkAllocationCallbacks* pAllocator)
+		const VkAllocationCallbacks* pAllocator)
 	{
 		auto func =
 			(PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
@@ -121,7 +121,7 @@ namespace lve {
 	}
 
 	VkFormat LveDevice::FindSupportedFormat(const std::vector<VkFormat>& formatCandidates, VkImageTiling tiling,
-											VkFormatFeatureFlags features)
+		VkFormatFeatureFlags features)
 	{
 		for (const VkFormat& format : formatCandidates)
 		{
@@ -147,14 +147,14 @@ namespace lve {
 	/////////////////////////////////////////////////////////////////////////////////
 
 	void LveDevice::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags,
-								 VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+		VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 	{
 		// Buffer creation
 		VkBufferCreateInfo bufferInfo{};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		bufferInfo.size = size;
 		bufferInfo.usage = usageFlags;
-		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;	 // only used by the graphics queue
+		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // only used by the graphics queue
 
 		VkResult bufferResult = vkCreateBuffer(m_device, &bufferInfo, nullptr, &buffer);
 		ASSERT_EQ(bufferResult, VK_SUCCESS, "Failed to create vertex buffer!");
@@ -251,7 +251,7 @@ namespace lve {
 	/////////////////////////////////////////////////////////////////////////////////
 
 	void LveDevice::CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags propertyFlags,
-										VkImage& image, VkDeviceMemory& imageMemory)
+		VkImage& image, VkDeviceMemory& imageMemory)
 	{
 		VkResult result = vkCreateImage(m_device, &imageInfo, nullptr, &image);
 		ASSERT_EQ(result, VK_SUCCESS, "Failed to create image!");
@@ -377,7 +377,7 @@ namespace lve {
 
 		// If the queue families are the same, then we only need to pass its index once.
 		std::set<U32> uniqueQueueFamilies = { queueFamilyData.graphicsFamily.value(),
-											  queueFamilyData.presentFamily.value() };
+			queueFamilyData.presentFamily.value() };
 
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 		F32 queuePriority = 1.0f;
@@ -403,7 +403,7 @@ namespace lve {
 		createInfo.pEnabledFeatures = &deviceFeatures;
 
 		createInfo.enabledExtensionCount = static_cast<U32>(m_deviceExtensions.size());
-		createInfo.ppEnabledExtensionNames = m_deviceExtensions.data();	// e.g. swap chain
+		createInfo.ppEnabledExtensionNames = m_deviceExtensions.data(); // e.g. swap chain
 
 		// Might not really be necessary anymore because device specific validation layers
 		// have been deprecated.
@@ -461,8 +461,7 @@ namespace lve {
 		VkPhysicalDeviceFeatures supportedDeviceFeatures{};
 		vkGetPhysicalDeviceFeatures(physicalDevice, &supportedDeviceFeatures);
 
-		return queueFamilyIndices.IsComplete() && extensionsSupported && swapChainAdequate &&
-			   supportedDeviceFeatures.samplerAnisotropy;
+		return queueFamilyIndices.IsComplete() && extensionsSupported && swapChainAdequate && supportedDeviceFeatures.samplerAnisotropy;
 	}
 
 	std::vector<const char*> LveDevice::GetRequiredExtensions()
@@ -498,9 +497,9 @@ namespace lve {
 		for (const char* layerName : m_validationLayers)
 		{
 			auto it = std::find_if(availableLayers.begin(), availableLayers.end(),
-								   [layerName](VkLayerProperties layerProperties) {
-									   return strcmp(layerProperties.layerName, layerName);
-								   });
+				[layerName](VkLayerProperties layerProperties) {
+					return strcmp(layerProperties.layerName, layerName);
+				});
 
 			if (it == availableLayers.end())
 			{
@@ -555,12 +554,8 @@ namespace lve {
 	{
 		createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-		createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-									 VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-									 VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-		createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-								 VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-								 VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+		createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 
 		createInfo.pfnUserCallback = DebugCallback;
 		createInfo.pUserData = nullptr;
@@ -639,10 +634,10 @@ namespace lve {
 		{
 			details.presentModes.resize(presentModeCount);
 			vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, m_surface, &presentModeCount,
-													  details.presentModes.data());
+				details.presentModes.data());
 		}
 
 		return details;
 	}
 
-}  // namespace lve
+} // namespace lve

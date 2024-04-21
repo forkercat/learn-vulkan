@@ -69,17 +69,17 @@ struct Vertex
 	};
 };
 
-namespace std {
+namespace std
+{
 	template <>
 	struct hash<Vertex>
 	{
 		size_t operator()(Vertex const& vertex) const
 		{
-			return ((hash<glm::vec3>()(vertex.position) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
-				   (hash<glm::vec2>()(vertex.texCoord) << 1);
+			return ((hash<glm::vec3>()(vertex.position) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^ (hash<glm::vec2>()(vertex.texCoord) << 1);
 		}
 	};
-}  // namespace std
+} // namespace std
 
 class HelloTriangleApplication
 {
@@ -137,7 +137,7 @@ private:
 	/// Texture
 	void CreateTextureImage();
 	void CreateImage(U32 width, U32 height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usageFlags,
-					 VkMemoryPropertyFlags propertyFlags, VkImage& image, VkDeviceMemory& imageMemory);
+		VkMemoryPropertyFlags propertyFlags, VkImage& image, VkDeviceMemory& imageMemory);
 	void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void CopyBufferToImage(VkBuffer buffer, VkImage image, U32 width, U32 height);
 	void CreateTextureImageView();
@@ -162,7 +162,7 @@ private:
 	void CreateDescriptorSets();
 
 	void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags,
-					  VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+		VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
 	/// Synchronization
@@ -189,7 +189,7 @@ private:
 	static VkShaderModule CreateShaderModule(VkDevice device, const std::vector<char>& code);
 
 	static VkFormat FindSupportedFormat(VkPhysicalDevice physicalDevice, const std::vector<VkFormat>& formatCandidates,
-										VkImageTiling tiling, VkFormatFeatureFlags features);
+		VkImageTiling tiling, VkFormatFeatureFlags features);
 	static bool HasStencilComponent(VkFormat format);
 
 	static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
@@ -199,7 +199,7 @@ private:
 	VkInstance m_instance;
 	VkDebugUtilsMessengerEXT m_debugMessenger;
 	VkSurfaceKHR m_surface;
-	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;	// Auto destroyed when VkInstance is destroyed.
+	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE; // Auto destroyed when VkInstance is destroyed.
 	VkDevice mDevice;
 	VkQueue m_graphicsQueue;
 	VkQueue m_presentQueue;
@@ -208,7 +208,7 @@ private:
 	VkSwapchainKHR m_swapchain;
 	VkFormat m_swapchainImageFormat;
 	VkExtent2D m_swapchainExtent;
-	std::vector<VkImage> m_swapchainImages;	// Auto destroyed when the swap chain is cleaned up.
+	std::vector<VkImage> m_swapchainImages; // Auto destroyed when the swap chain is cleaned up.
 	std::vector<VkImageView> m_swapchainImageViews;
 	std::vector<VkFramebuffer> m_swapchainFramebuffers;
 

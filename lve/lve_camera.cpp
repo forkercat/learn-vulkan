@@ -4,8 +4,8 @@
 
 #include "lve_camera.h"
 
-namespace lve {
-
+namespace lve
+{
 	void LveCamera::SetOrthographicProjection(F32 left, F32 right, F32 top, F32 bottom, F32 near, F32 far)
 	{
 		m_projectionMatrix = Matrix4{ 1.0f };
@@ -91,4 +91,4 @@ namespace lve {
 		m_viewMatrix[3][2] = -MathOp::Dot(w, position);
 	}
 
-}  // namespace lve
+} // namespace lve

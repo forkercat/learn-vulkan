@@ -10,8 +10,8 @@
 
 #include <chrono>
 
-namespace lve {
-
+namespace lve
+{
 	FirstApp::FirstApp()
 	{
 		LoadGameObjects();
@@ -77,14 +77,18 @@ namespace lve {
 
 	void FirstApp::LoadGameObjects()
 	{
-		UniqueRef<LveModel> cubeModel = LveModel::CreateCubeModel(m_device, { 0.f, 0.f, 0.f });
+		// Cube
+		// UniqueRef<LveModel> model = LveModel::CreateCubeModel(m_device, { 0.f, 0.f, 0.f });
 
-		LveGameObject cube = LveGameObject::CreateGameObject();
-		cube.model = std::move(cubeModel);
-		cube.transform.translation = { 0.f, 0.f, 2.5f };
-		cube.transform.scale = Vector3(0.5f);
+		// Model
+		UniqueRef<LveModel> model = LveModel::CreateModelFromFile(m_device, "models/smooth_vase.obj");
 
-		m_gameObjects.push_back(std::move(cube));
+		LveGameObject gameObject = LveGameObject::CreateGameObject();
+		gameObject.model = std::move(model);
+		gameObject.transform.translation = { 0.0f, 0.0f, 3.0f };
+		gameObject.transform.scale = Vector3(2.0f);
+
+		m_gameObjects.push_back(std::move(gameObject));
 	}
 
-}  // namespace lve
+} // namespace lve

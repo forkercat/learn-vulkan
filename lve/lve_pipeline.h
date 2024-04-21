@@ -9,8 +9,8 @@
 
 #include <vector>
 
-namespace lve {
-
+namespace lve
+{
 	struct PipelineConfigInfo
 	{
 		PipelineConfigInfo(const PipelineConfigInfo&) = delete;
@@ -35,7 +35,7 @@ namespace lve {
 	{
 	public:
 		LvePipeline(LveDevice& device, const std::string& vertFilepath, const std::string& fragFilepath,
-					const PipelineConfigInfo& configInfo);
+			const PipelineConfigInfo& configInfo);
 		~LvePipeline();
 
 		LvePipeline(const LvePipeline&) = delete;
@@ -47,7 +47,7 @@ namespace lve {
 
 	private:
 		void CreateGraphicsPipeline(const std::string& vertFilepath, const std::string& fragFilepath,
-									const PipelineConfigInfo& configInfo);
+			const PipelineConfigInfo& configInfo);
 
 		void CreateShaderModule(const std::vector<char>& code, VkShaderModule* pShaderModule);
 
@@ -60,4 +60,4 @@ namespace lve {
 		VkShaderModule m_fragShaderModule;
 	};
 
-}  // namespace lve
+} // namespace lve

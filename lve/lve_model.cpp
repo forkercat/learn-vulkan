@@ -4,8 +4,11 @@
 
 #include "lve_model.h"
 
-namespace lve {
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
 
+namespace lve
+{
 	std::vector<VkVertexInputBindingDescription> LveModel::Vertex::GetBindingDescriptions()
 	{
 		std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
@@ -91,9 +94,12 @@ namespace lve {
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
 
-		m_device.CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-							  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer,
-							  stagingBufferMemory);
+		m_device.CreateBuffer(
+			bufferSize,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			stagingBuffer,
+			stagingBufferMemory);
 
 		// Map the host memory on CPU to the device memory on GPU.
 		void* data;
@@ -104,8 +110,12 @@ namespace lve {
 		vkUnmapMemory(m_device.GetDevice(), stagingBufferMemory);
 
 		// Create vertex buffer.
-		m_device.CreateBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-							  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vertexBuffer, m_vertexBufferMemory);
+		m_device.CreateBuffer(
+			bufferSize,
+			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			m_vertexBuffer,
+			m_vertexBufferMemory);
 
 		// Copy staging to vertex buffer.
 		m_device.CopyBuffer(stagingBuffer, m_vertexBuffer, bufferSize);
@@ -130,9 +140,12 @@ namespace lve {
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
 
-		m_device.CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-							  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer,
-							  stagingBufferMemory);
+		m_device.CreateBuffer(
+			bufferSize,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			stagingBuffer,
+			stagingBufferMemory);
 
 		// Map the host memory on CPU to the device memory on GPU.
 		void* data;
@@ -141,8 +154,12 @@ namespace lve {
 		vkUnmapMemory(m_device.GetDevice(), stagingBufferMemory);
 
 		// Create index buffer.
-		m_device.CreateBuffer(bufferSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-							  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_indexBuffer, m_indexBufferMemory);
+		m_device.CreateBuffer(
+			bufferSize,
+			VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			m_indexBuffer,
+			m_indexBufferMemory);
 
 		// Copy staging to index buffer.
 		m_device.CopyBuffer(stagingBuffer, m_indexBuffer, bufferSize);
@@ -199,10 +216,92 @@ namespace lve {
 			v.position += offset;
 		}
 
-		modelBuilder.indices = { 0,	 1,	 2,	 0,	 3,	 1,	 4,	 5,	 6,	 4,	 7,	 5,	 8,	 9,	 10, 8,	 11, 9,
-								 12, 13, 14, 12, 15, 13, 16, 17, 18, 16, 19, 17, 20, 21, 22, 20, 23, 21 };
+		modelBuilder.indices = {
+			0, 1, 2, 0, 3, 1, 4, 5, 6, 4, 7, 5, 8, 9, 10, 8, 11, 9, 12, 13,
+			14, 12, 15, 13, 16, 17, 18, 16, 19, 17, 20, 21, 22, 20, 23, 21
+		};
 
 		return MakeUniqueRef<LveModel>(device, modelBuilder);
 	}
 
-}  // namespace lve
+	UniqueRef<LveModel> LveModel::CreateModelFromFile(LveDevice& device, const std::string& filepath)
+	{
+		Builder builder{};
+		builder.LoadModel(filepath);
+		PRINT("Vertex count: %zu", builder.vertices.size());
+		return MakeUniqueRef<LveModel>(device, builder);
+	}
+
+	void LveModel::Builder::LoadModel(const std::string& filepath)
+	{
+		using tinyobj::attrib_t;
+		using tinyobj::index_t;
+		using tinyobj::material_t;
+		using tinyobj::shape_t;
+
+		attrib_t attrib;
+		std::vector<shape_t> shapes;
+		std::vector<material_t> materials;
+		std::string warn, error;
+
+		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &error, filepath.c_str()))
+		{
+			ASSERT(false, "Failed to load model: %s", filepath.c_str());
+		}
+
+		vertices.clear();
+		indices.clear();
+
+		for (const shape_t& shape : shapes)
+		{
+			for (const index_t& index : shape.mesh.indices)
+			{
+				Vertex vertex{};
+
+				if (index.vertex_index >= 0)
+				{
+					vertex.position = {
+						attrib.vertices[3 * index.vertex_index + 0],
+						attrib.vertices[3 * index.vertex_index + 1],
+						attrib.vertices[3 * index.vertex_index + 2]
+					};
+
+					int colorIndex = 3 * index.vertex_index + 2;
+
+					if (colorIndex < attrib.colors.size()) // check if color index is in bound
+					{
+						vertex.color = {
+							attrib.colors[colorIndex - 2],
+							attrib.colors[colorIndex - 1],
+							attrib.colors[colorIndex - 0]
+						};
+					}
+					else
+					{
+						vertex.color = { 1.0f, 1.0f, 1.0f }; // set the default color
+					}
+				}
+
+				if (index.normal_index >= 0)
+				{
+					vertex.normal = {
+						attrib.normals[3 * index.normal_index + 0],
+						attrib.normals[3 * index.normal_index + 1],
+						attrib.normals[3 * index.normal_index + 2]
+					};
+				}
+
+				if (index.texcoord_index >= 0)
+				{
+					vertex.uv = {
+						attrib.texcoords[3 * index.texcoord_index + 0],
+						attrib.texcoords[3 * index.texcoord_index + 1]
+					};
+				}
+
+				vertices.push_back(std::move(vertex));
+			}
+		}
+	}
+
+} // namespace lve

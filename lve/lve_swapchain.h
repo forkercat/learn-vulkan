@@ -11,8 +11,8 @@
 #include <memory>
 #include <vector>
 
-namespace lve {
-
+namespace lve
+{
 	// Swapchain class that manages Vulkan swapchain and images, framebuffers, render passes
 	// synchronization primitives, etc.
 	class LveSwapchain
@@ -47,8 +47,7 @@ namespace lve {
 
 		bool CompareSwapchainFormats(const LveSwapchain& otherSwapchain) const
 		{
-			return m_swapchainImageFormat == otherSwapchain.m_swapchainImageFormat &&
-				   m_swapchainDepthFormat == otherSwapchain.m_swapchainDepthFormat;
+			return m_swapchainImageFormat == otherSwapchain.m_swapchainImageFormat && m_swapchainDepthFormat == otherSwapchain.m_swapchainDepthFormat;
 		}
 
 	private:
@@ -91,10 +90,10 @@ namespace lve {
 		// Sync
 		std::vector<VkSemaphore> m_imageAvailableSemaphores;
 		std::vector<VkSemaphore> m_renderFinishedSemaphores;
-		std::vector<VkFence> m_inFlightFences;	// size = 2
-		std::vector<VkFence> m_imagesInFlight;	// size = 3
+		std::vector<VkFence> m_inFlightFences; // size = 2
+		std::vector<VkFence> m_imagesInFlight; // size = 3
 
 		USize m_currentFrame = 0;
 	};
 
-}  // namespace lve
+} // namespace lve

@@ -4,8 +4,8 @@
 
 #include "keyboard_movement_controller.h"
 
-namespace lve {
-
+namespace lve
+{
 	void KeyboardMovementController::MoveInPlaneXZ(GLFWwindow* window, F32 dt, LveGameObject& gameObject)
 	{
 		Vector3 rotate{ 0.0f };
@@ -55,4 +55,4 @@ namespace lve {
 		}
 	}
 
-}  // namespace lve
+} // namespace lve

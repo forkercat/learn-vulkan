@@ -4,8 +4,8 @@
 
 #include "lve_renderer.h"
 
-namespace lve {
-
+namespace lve
+{
 	LveRenderer::LveRenderer(LveWindow& window, LveDevice& device)
 		: m_window(window), m_device(device)
 	{
@@ -49,7 +49,7 @@ namespace lve {
 
 		m_isFrameStarted = true;
 
-		VkCommandBuffer commandBuffer = GetCurrentCommandBuffer();	// based on m_currentFrameIndex
+		VkCommandBuffer commandBuffer = GetCurrentCommandBuffer(); // based on m_currentFrameIndex
 
 		// Begin command buffer.
 		VkCommandBufferBeginInfo bufferBeginInfo{};
@@ -141,7 +141,7 @@ namespace lve {
 
 	void LveRenderer::CreateCommandBuffers()
 	{
-		m_commandBuffers.resize(LveSwapchain::MAX_FRAMES_IN_FLIGHT);  // 2
+		m_commandBuffers.resize(LveSwapchain::MAX_FRAMES_IN_FLIGHT); // 2
 
 		VkCommandBufferAllocateInfo bufferInfo{};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -156,7 +156,7 @@ namespace lve {
 	void LveRenderer::FreeCommandBuffers()
 	{
 		vkFreeCommandBuffers(m_device.GetDevice(), m_device.GetCommandPool(), static_cast<U32>(m_commandBuffers.size()),
-							 m_commandBuffers.data());
+			m_commandBuffers.data());
 		m_commandBuffers.clear();
 	}
 
@@ -194,4 +194,4 @@ namespace lve {
 		}
 	}
 
-}  // namespace lve
+} // namespace lve

@@ -4,8 +4,8 @@
 
 #include "lve_swapchain.h"
 
-namespace lve {
-
+namespace lve
+{
 	LveSwapchain::LveSwapchain(LveDevice& device, VkExtent2D windowExtent)
 		: m_device(device), m_windowExtent(windowExtent)
 	{
@@ -75,11 +75,11 @@ namespace lve {
 	{
 		// Wait on host for the frame to finish.
 		vkWaitForFences(m_device.GetDevice(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE,
-						std::numeric_limits<U64>::max());  // disable timeout
+			std::numeric_limits<U64>::max()); // disable timeout
 
 		// Asynchronously on GPU get the next available swapchain image and signal the semaphore.
 		return vkAcquireNextImageKHR(m_device.GetDevice(), m_swapchain, std::numeric_limits<U64>::max(),
-									 m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, imageIndex);
+			m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, imageIndex);
 	}
 
 	VkResult LveSwapchain::SubmitCommandBuffers(const VkCommandBuffer* buffers, U32* imageIndex)
@@ -124,10 +124,10 @@ namespace lve {
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
 		presentInfo.waitSemaphoreCount = 1;
-		presentInfo.pWaitSemaphores = signalSemaphores;	 // RenderedFinishedSemaphore
+		presentInfo.pWaitSemaphores = signalSemaphores; // RenderedFinishedSemaphore
 
 		VkSwapchainKHR swapchains[] = { m_swapchain };
-		presentInfo.swapchainCount = 1;	 // Always be a single one.
+		presentInfo.swapchainCount = 1; // Always be a single one.
 		presentInfo.pSwapchains = swapchains;
 		presentInfo.pImageIndices = imageIndex;
 
@@ -142,7 +142,7 @@ namespace lve {
 	VkFormat LveSwapchain::FindDepthFormat()
 	{
 		return m_device.FindSupportedFormat({ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
-											VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+			VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////
@@ -196,8 +196,8 @@ namespace lve {
 		else
 		{
 			swapchainInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-			swapchainInfo.queueFamilyIndexCount = 0;	  // Optional
-			swapchainInfo.pQueueFamilyIndices = nullptr;  // Optional
+			swapchainInfo.queueFamilyIndexCount = 0;	 // Optional
+			swapchainInfo.pQueueFamilyIndices = nullptr; // Optional
 		}
 
 		swapchainInfo.preTransform = swapchainSupport.capabilities.currentTransform;
@@ -248,7 +248,7 @@ namespace lve {
 		depthAttachment.format = FindDepthFormat();
 		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 		depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;	 // we just read from it for testing
+		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; // we just read from it for testing
 		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -382,7 +382,7 @@ namespace lve {
 			VkResult result3 = vkCreateFence(m_device.GetDevice(), &fenceInfo, nullptr, &m_inFlightFences[i]);
 
 			ASSERT(result1 == VK_SUCCESS && result2 == VK_SUCCESS && result3 == VK_SUCCESS,
-				   "Failed to create synchronization objects for a frame!");
+				"Failed to create synchronization objects for a frame!");
 		}
 	}
 
@@ -413,7 +413,7 @@ namespace lve {
 		// the one that is most recently being drawn, which will decrease the latency but increase power consumption.
 		// 3. Immediate mode does not do any synchronization, which will cause high CPU and GPU usage and tearing.
 		auto mailboxIt = std::find_if(availablePresentModes.begin(), availablePresentModes.end(),
-									  [](VkPresentModeKHR presentMode) { return presentMode == VK_PRESENT_MODE_MAILBOX_KHR; });
+			[](VkPresentModeKHR presentMode) { return presentMode == VK_PRESENT_MODE_MAILBOX_KHR; });
 
 		// auto immediateIt = std::find_if(availablePresentModes.begin(), availablePresentModes.end(),
 		// 								[](VkPresentModeKHR presentMode) { return presentMode == VK_PRESENT_MODE_IMMEDIATE_KHR; });
@@ -481,4 +481,4 @@ namespace lve {
 		return imageView;
 	}
 
-}  // namespace lve
+} // namespace lve

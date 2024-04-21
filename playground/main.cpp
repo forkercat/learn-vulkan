@@ -10,13 +10,15 @@
 
 #include "print.h"
 
-// void Print(int val) { PRINT("Print(int)"); }
-void Print(int&& rref) { PRINT("Print(int&&)"); }
-void Print(const int&) { PRINT("Print(const int&)"); }
+// void Print(int val) { LOG("Print(int)"); }
+void Print(int&& rref) {
+	LOG("Print(int&&)"); }
+void Print(const int&) {
+	LOG("Print(const int&)"); }
 
 // void Print(int& ref)
 // {
-// 	PRINT("Print(int&)");
+// 	LOG("Print(int&)");
 // }
 
 int main()

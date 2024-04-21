@@ -11,8 +11,8 @@
 
 #include <string>
 
-namespace lve {
-
+namespace lve
+{
 	class LveWindow
 	{
 	public:
@@ -47,4 +47,4 @@ namespace lve {
 		GLFWwindow* m_nativeWindow;
 	};
 
-}  // namespace lve
+} // namespace lve

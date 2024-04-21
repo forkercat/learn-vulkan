@@ -9,8 +9,8 @@
 #include <vector>
 #include <optional>
 
-namespace lve {
-
+namespace lve
+{
 	struct SwapchainSupportDetails
 	{
 		VkSurfaceCapabilitiesKHR capabilities;
@@ -22,6 +22,7 @@ namespace lve {
 	{
 		std::optional<U32> graphicsFamily;
 		std::optional<U32> presentFamily;
+
 		bool IsComplete() { return graphicsFamily.has_value() && presentFamily.has_value(); }
 	};
 
@@ -49,12 +50,13 @@ namespace lve {
 		// Public helper functions
 		SwapchainSupportDetails GetSwapchainSupport() { return QuerySwapchainSupport(m_physicalDevice); };
 		QueueFamilyIndices FindPhysicalQueueFamilies() { return FindQueueFamilies(m_physicalDevice); }
+
 		U32 FindMemoryType(U32 typeFilter, VkMemoryPropertyFlags propertyFlags);
 		VkFormat FindSupportedFormat(const std::vector<VkFormat>& formatCandidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
 		// Buffer helper functions
 		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags propertyFlags, VkBuffer& buffer,
-						  VkDeviceMemory& bufferMemory);
+			VkDeviceMemory& bufferMemory);
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, U32 width, U32 height, U32 layerCount);
 
@@ -63,7 +65,7 @@ namespace lve {
 
 		// Image helper functions
 		void CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags propertyFlags, VkImage& image,
-								 VkDeviceMemory& imageMemory);
+			VkDeviceMemory& imageMemory);
 
 	private:
 		// Functions to create Vulkan resources
@@ -109,4 +111,4 @@ namespace lve {
 		const std::vector<const char*> m_deviceExtensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME, "VK_KHR_portability_subset" };
 	};
 
-}  // namespace lve
+} // namespace lve

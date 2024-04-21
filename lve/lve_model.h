@@ -10,8 +10,8 @@
 
 #include <vector>
 
-namespace lve {
-
+namespace lve
+{
 	class LveModel
 	{
 	public:
@@ -19,6 +19,8 @@ namespace lve {
 		{
 			Vector3 position;
 			Vector3 color;
+			Vector3 normal;
+			Vector2 uv;
 
 			static std::vector<VkVertexInputBindingDescription> GetBindingDescriptions();
 			static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions();
@@ -28,6 +30,8 @@ namespace lve {
 		{
 			std::vector<Vertex> vertices{};
 			std::vector<U32> indices{};
+
+			void LoadModel(const std::string& filepath);
 		};
 
 		LveModel(LveDevice& device, const Builder& builder);
@@ -40,6 +44,7 @@ namespace lve {
 		void Draw(VkCommandBuffer commandBuffer);
 
 		static UniqueRef<LveModel> CreateCubeModel(LveDevice& device, Vector3 offset);
+		static UniqueRef<LveModel> CreateModelFromFile(LveDevice& device, const std::string& filepath);
 
 	private:
 		void CreateVertexBuffers(const std::vector<Vertex>& vertices);
@@ -57,4 +62,4 @@ namespace lve {
 		U32 m_indexCount;
 	};
 
-}  // namespace lve
+} // namespace lve

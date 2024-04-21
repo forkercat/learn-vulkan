@@ -15,8 +15,8 @@
 #include <vector>
 #include <memory>
 
-namespace lve {
-
+namespace lve
+{
 	class FirstApp
 	{
 	public:
@@ -43,4 +43,4 @@ namespace lve {
 		std::vector<LveGameObject> m_gameObjects;
 	};
 
-}  // namespace lve
+} // namespace lve

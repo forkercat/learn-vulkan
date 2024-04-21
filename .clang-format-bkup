@@ -1,0 +1,51 @@
+---
+Language: Cpp
+BasedOnStyle: Microsoft
+AccessModifierOffset: -4
+NamespaceIndentation: All
+PointerAlignment: Left
+AlignEscapedNewlines: Left
+UseTab: Always
+IndentWidth: 4
+TabWidth: 4
+ColumnLimit: 140
+
+AllowShortBlocksOnASingleLine: Never
+#AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: InlineOnly
+#AllowShortLambdasOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+
+Cpp11BracedListStyle: false
+
+AlwaysBreakTemplateDeclarations: Yes
+AlignAfterOpenBracket: AlwaysBreak
+
+IndentCaseLabels: true
+IndentCaseBlocks: false
+
+SortIncludes: Never
+
+SpacesBeforeTrailingComments: 2
+
+MaxEmptyLinesToKeep: 1
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterNamespace: false
+
+#
+# Break inheritance list and constructor initializers before colon.
+#
+BreakInheritanceList: BeforeColon
+BreakConstructorInitializers: BeforeColon
+PackConstructorInitializers: NextLineOnly
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: true
+BinPackArguments: false
+BinPackParameters: false
+ExperimentalAutoDetectBinPacking: false

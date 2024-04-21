@@ -9,8 +9,8 @@
 #include "lve_game_object.h"
 #include "lve_window.h"
 
-namespace lve {
-
+namespace lve
+{
 	class KeyboardMovementController
 	{
 	public:
@@ -36,5 +36,5 @@ namespace lve {
 		F32 moveSpeed = 3.0f;
 		F32 lookSpeed = 1.5f;
 	};
-
-}  // namespace lve
+	
+} // namespace lve
