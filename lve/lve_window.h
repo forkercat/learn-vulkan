@@ -25,6 +25,7 @@ namespace lve {
 		bool ShouldClose() { return glfwWindowShouldClose(m_nativeWindow); }
 		bool WasWindowResized() { return m_framebufferResized; }
 		void ResetWindowResizedFlag() { m_framebufferResized = false; }
+		GLFWwindow* GetNativeWindow() const { return m_nativeWindow; }
 
 		void CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
 

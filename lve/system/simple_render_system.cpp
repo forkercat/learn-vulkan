@@ -60,15 +60,6 @@ namespace lve {
 	void SimpleRenderSystem::RenderGameObjects(VkCommandBuffer commandBuffer, std::vector<LveGameObject>& gameObjects,
 											   const LveCamera& camera)
 	{
-		// Update objects.
-		int i = 0;
-		for (LveGameObject& gameObject : gameObjects)
-		{
-			i += 1;
-			gameObject.transform.rotation.y = glm::mod<F32>(gameObject.transform.rotation.y + 0.01f * i, 2.0f * GLM_PI);
-			gameObject.transform.rotation.x = glm::mod<F32>(gameObject.transform.rotation.x + 0.005f * i, 2.0f * GLM_PI);
-		}
-
 		// Bind graphics pipeline.
 		m_pipeline->Bind(commandBuffer);
 

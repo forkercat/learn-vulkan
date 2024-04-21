@@ -10,6 +10,7 @@ PRIVATE
 	lve_renderer.cpp
 	lve_game_object.cpp
 	lve_camera.cpp
+	keyboard_movement_controller.cpp
 	system/simple_render_system.cpp
 	first_app.cpp
 	main.cpp
@@ -22,6 +23,7 @@ PUBLIC
 	lve_renderer.h
 	lve_game_object.h
 	lve_camera.h
+	keyboard_movement_controller.h
 	system/simple_render_system.h
 	system/rainbow_system.h
 	first_app.h

@@ -32,6 +32,7 @@ using Matrix4x2 = glm::mat4x2;
 using Matrix3x2 = glm::mat3x2;
 
 #define GLM_PI glm::pi<F32>()
+#define GLM_2_PI glm::two_pi<F32>()
 
 // Math operations
 
@@ -47,7 +48,8 @@ namespace MathOp {
 		return glm::degrees(radians);
 	}
 
-	inline F32 Abs(F32 value)
+	template <typename T>
+	inline T Abs(T value)
 	{
 		return glm::abs(value);
 	}
@@ -62,17 +64,14 @@ namespace MathOp {
 		return glm::cos(value);
 	}
 
-	inline Vector3 Normalize(const Vector3& value)
+	template <typename T>
+	inline T Normalize(const T& value)
 	{
 		return glm::normalize(value);
 	}
 
-	inline F32 Dot(const Vector3& v1, const Vector3& v2)
-	{
-		return glm::dot(v1, v2);
-	}
-
-	inline F32 Dot(const Vector2& v1, const Vector2& v2)
+	template <typename T>
+	inline F32 Dot(const T& v1, const T& v2)
 	{
 		return glm::dot(v1, v2);
 	}
@@ -80,6 +79,24 @@ namespace MathOp {
 	inline Vector3 Cross(const Vector3& v1, const Vector3& v2)
 	{
 		return glm::cross(v1, v2);
+	}
+
+	template <typename T>
+	inline T Clamp(T value, T minValue, T maxValue)
+	{
+		return glm::clamp(value, minValue, maxValue);
+	}
+
+	template <typename T>
+	inline T Max(T v1, T v2)
+	{
+		return glm::max(v1, v2);
+	}
+
+	template <typename T>
+	inline T Min(T v1, T v2)
+	{
+		return glm::max(v1, v2);
 	}
 
 }  // namespace MathOp

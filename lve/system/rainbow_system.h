@@ -28,8 +28,10 @@ namespace lve {
 		}
 
 		// Randomly select a color for each game object every m_flickerRate seconds.
-		void Update(F32 deltaTime, std::vector<LveGameObject>& gameObjects)
+		void Update(std::vector<LveGameObject>& gameObjects)
 		{
+			F32 deltaTime = 0;
+
 			m_elapsedTime -= deltaTime;
 
 			if (m_elapsedTime < 0.0f)

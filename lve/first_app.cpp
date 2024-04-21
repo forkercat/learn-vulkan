@@ -6,11 +6,13 @@
 
 #include "lve/system/simple_render_system.h"
 #include "lve/system/rainbow_system.h"
+#include "lve/keyboard_movement_controller.h"
+
+#include <chrono>
 
 namespace lve {
 
 	FirstApp::FirstApp()
-		: m_elapsedTime(0.0f)
 	{
 		LoadGameObjects();
 	}
@@ -25,20 +27,26 @@ namespace lve {
 		RainbowSystem rainbowSystem(0.4f);
 
 		LveCamera camera;
-		// camera.SetViewDirection(Vector3(0.0f), Vector3(0.5f, 0.0f, 1.0f));
 		camera.SetViewTarget(Vector3(-1.0f, -2.0f, 2.0f), Vector3(0.0f, 0.0f, 2.5f));
+
+		LveGameObject viewerObject = LveGameObject::CreateGameObject();
+		KeyboardMovementController cameraController{};
+
+		std::chrono::time_point currentTime = std::chrono::high_resolution_clock::now();
 
 		while (!m_window.ShouldClose())
 		{
-			// Update time.
-			F64 newTime = glfwGetTime();
-			F32 deltaTime = static_cast<F32>(newTime - m_elapsedTime);
-			m_elapsedTime = newTime;
-
 			glfwPollEvents();
 
+			// Update time after polling because polling might block.
+			std::chrono::time_point newTime = std::chrono::high_resolution_clock::now();
+			F32 frameTime = std::chrono::duration<F32, std::chrono::seconds::period>(newTime - currentTime).count();
+			currentTime = newTime;
+
+			cameraController.MoveInPlaneXZ(m_window.GetNativeWindow(), frameTime, viewerObject);
+			camera.SetViewYXZ(viewerObject.transform.translation, viewerObject.transform.rotation);
+
 			F32 aspect = m_renderer.GetAspectRatio();
-			// camera.SetOrthographicProjection(-aspect, aspect, -1, 1, -1, 1);
 			camera.SetPerspectiveProjection(MathOp::Radians(50.f), aspect, 0.1f, 10.f);
 
 			// Could be nullptr if, for example, the swapchain needs to be recreated.
@@ -56,8 +64,6 @@ namespace lve {
 				// - End shading pass
 				// - Post processing...
 				m_renderer.BeginSwapchainRenderPass(commandBuffer);
-
-				rainbowSystem.Update(deltaTime, m_gameObjects);
 
 				simpleRenderSystem.RenderGameObjects(commandBuffer, m_gameObjects, camera);
 
