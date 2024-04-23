@@ -10,6 +10,7 @@
 #include "lve_device.h"
 #include "lve_renderer.h"
 #include "lve_buffer.h"
+#include "lve_descriptors.h"
 #include "lve_game_object.h"
 #include "lve_camera.h"
 
@@ -40,6 +41,9 @@ namespace lve
 		LveWindow m_window{ WIDTH, HEIGHT, "Hello Vulkan!" };
 		LveDevice m_device{ m_window };
 		LveRenderer m_renderer{ m_window, m_device };
+
+		// Note: Order of declarations matters.
+		UniqueRef<LveDescriptorPool> m_globalDescriptorPool{};
 
 		std::vector<LveGameObject> m_gameObjects;
 	};

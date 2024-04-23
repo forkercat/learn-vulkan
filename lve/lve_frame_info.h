@@ -16,6 +16,7 @@ namespace lve
 		F32 frameTime;
 		VkCommandBuffer commandBuffer;
 		LveCamera& camera;
+		VkDescriptorSet globalDescriptorSet;
 	};
 
 } // namespace lve

@@ -9,6 +9,7 @@ PRIVATE
 	lve_buffer.cpp
 	lve_model.cpp
 	lve_renderer.cpp
+	lve_descriptors.cpp
 	lve_game_object.cpp
 	lve_camera.cpp
 	keyboard_movement_controller.cpp
@@ -23,6 +24,7 @@ PUBLIC
 	lve_buffer.h
 	lve_model.h
 	lve_renderer.h
+	lve_descriptors.h
 	lve_frame_info.h
 	lve_game_object.h
 	lve_camera.h

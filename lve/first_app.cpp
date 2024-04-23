@@ -20,6 +20,13 @@ namespace lve
 
 	FirstApp::FirstApp()
 	{
+		m_globalDescriptorPool =
+			LveDescriptorPool::Builder(m_device)
+				// How many descriptor sets can be created from the pool.
+				.SetMaxSets(LveSwapchain::MAX_FRAMES_IN_FLIGHT)
+				// How many descriptors of this type are available in the pool.
+				.AddPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, LveSwapchain::MAX_FRAMES_IN_FLIGHT)
+				.Build();
 		LoadGameObjects();
 	}
 
@@ -44,8 +51,25 @@ namespace lve
 			uboBuffers[i]->Map();
 		}
 
+		// Descriptors
+		UniqueRef<LveDescriptorSetLayout> globalSetLayout =
+			LveDescriptorSetLayout::Builder(m_device)
+				.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+				.Build();
+
+		std::vector<VkDescriptorSet> globalDescriptorSets(LveSwapchain::MAX_FRAMES_IN_FLIGHT); // one set per frame
+		for (int i = 0; i < globalDescriptorSets.size(); ++i)
+		{
+			VkDescriptorBufferInfo bufferInfo = uboBuffers[i]->DescriptorInfo();
+
+			LveDescriptorWriter(*globalSetLayout, *m_globalDescriptorPool)
+				.WriteBuffer(0, &bufferInfo)
+				.Build(globalDescriptorSets[i]);
+		}
+
 		// Render system, camera, and controller
-		SimpleRenderSystem simpleRenderSystem(m_device, m_renderer.GetSwapchainRenderPass());
+		SimpleRenderSystem simpleRenderSystem(
+			m_device, m_renderer.GetSwapchainRenderPass(), globalSetLayout->GetDescriptorSetLayout());
 		RainbowSystem rainbowSystem(0.4f);
 
 		LveCamera camera;
@@ -75,11 +99,13 @@ namespace lve
 			if (VkCommandBuffer commandBuffer = m_renderer.BeginFrame())
 			{
 				// Prepare frame info
+				U32 frameIndex = m_renderer.GetCurrentFrameIndex();
 				FrameInfo frameInfo{
-					m_renderer.GetCurrentFrameIndex(),
-					frameTime,
-					commandBuffer,
-					camera
+					.frameIndex = frameIndex,
+					.frameTime = frameTime,
+					.commandBuffer = commandBuffer,
+					.camera = camera,
+					.globalDescriptorSet = globalDescriptorSets[frameIndex]
 				};
 
 				// Update
