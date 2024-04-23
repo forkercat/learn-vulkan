@@ -6,6 +6,7 @@ PRIVATE
 	lve_device.cpp
 	lve_pipeline.cpp
 	lve_swapchain.cpp
+	lve_buffer.cpp
 	lve_model.cpp
 	lve_renderer.cpp
 	lve_game_object.cpp
@@ -19,8 +20,10 @@ PUBLIC
 	lve_device.h
 	lve_pipeline.h
 	lve_swapchain.h
+	lve_buffer.h
 	lve_model.h
 	lve_renderer.h
+	lve_frame_info.h
 	lve_game_object.h
 	lve_camera.h
 	lve_utils.h

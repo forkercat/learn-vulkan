@@ -7,6 +7,7 @@
 #include "core/core.h"
 
 #include "lve_device.h"
+#include "lve_buffer.h"
 
 #include <vector>
 
@@ -57,13 +58,12 @@ namespace lve
 
 	private:
 		LveDevice& m_device;
-		VkBuffer m_vertexBuffer;
-		VkDeviceMemory m_vertexBufferMemory;
+
+		UniqueRef<LveBuffer> m_vertexBuffer;
 		U32 m_vertexCount;
 
 		bool m_hasIndexBuffer = false;
-		VkBuffer m_indexBuffer;
-		VkDeviceMemory m_indexBufferMemory;
+		UniqueRef<LveBuffer> m_indexBuffer;
 		U32 m_indexCount;
 	};
 

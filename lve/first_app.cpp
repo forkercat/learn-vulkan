@@ -12,6 +12,12 @@
 
 namespace lve
 {
+	struct GlobalUbo
+	{
+		Matrix4 projectionView{ 1.0f };
+		Vector3 lightDirection = MathOp::Normalize(Vector3{ 1.0f, -3.0f, -1.0f });
+	};
+
 	FirstApp::FirstApp()
 	{
 		LoadGameObjects();
@@ -23,6 +29,22 @@ namespace lve
 
 	void FirstApp::Run()
 	{
+		// Uniform buffers
+		std::vector<UniqueRef<LveBuffer>> uboBuffers(LveSwapchain::MAX_FRAMES_IN_FLIGHT);
+
+		for (int i = 0; i < uboBuffers.size(); ++i)
+		{
+			uboBuffers[i] = MakeUniqueRef<LveBuffer>(
+				m_device,
+				sizeof(GlobalUbo),
+				1,
+				VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT); // or add VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+
+			uboBuffers[i]->Map();
+		}
+
+		// Render system, camera, and controller
 		SimpleRenderSystem simpleRenderSystem(m_device, m_renderer.GetSwapchainRenderPass());
 		RainbowSystem rainbowSystem(0.4f);
 
@@ -52,6 +74,20 @@ namespace lve
 			// Could be nullptr if, for example, the swapchain needs to be recreated.
 			if (VkCommandBuffer commandBuffer = m_renderer.BeginFrame())
 			{
+				// Prepare frame info
+				FrameInfo frameInfo{
+					m_renderer.GetCurrentFrameIndex(),
+					frameTime,
+					commandBuffer,
+					camera
+				};
+
+				// Update
+				GlobalUbo ubo{};
+				ubo.projectionView = camera.GetProjection() * camera.GetView();
+				uboBuffers[frameInfo.frameIndex]->WriteToBuffer(&ubo);
+				uboBuffers[frameInfo.frameIndex]->Flush();
+
 				// The reason why BeginFrame and BeginSwapchainRenderPass are separate functions is
 				// we want the app to control over this to enable us easily integrating multiple render passes.
 				//
@@ -65,7 +101,7 @@ namespace lve
 				// - Post processing...
 				m_renderer.BeginSwapchainRenderPass(commandBuffer);
 
-				simpleRenderSystem.RenderGameObjects(commandBuffer, m_gameObjects, camera);
+				simpleRenderSystem.RenderGameObjects(frameInfo, m_gameObjects);
 
 				m_renderer.EndSwapchainRenderPass(commandBuffer);
 				m_renderer.EndFrame();

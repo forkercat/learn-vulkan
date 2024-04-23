@@ -54,25 +54,18 @@ namespace lve
 
 	LveModel::~LveModel()
 	{
-		vkDestroyBuffer(m_device.GetDevice(), m_vertexBuffer, nullptr);
-		vkFreeMemory(m_device.GetDevice(), m_vertexBufferMemory, nullptr);
-
-		if (m_hasIndexBuffer)
-		{
-			vkDestroyBuffer(m_device.GetDevice(), m_indexBuffer, nullptr);
-			vkFreeMemory(m_device.GetDevice(), m_indexBufferMemory, nullptr);
-		}
 	}
 
 	void LveModel::Bind(VkCommandBuffer commandBuffer)
 	{
-		VkBuffer buffers[] = { m_vertexBuffer };
+		VkBuffer buffers[] = { m_vertexBuffer->GetBuffer() };
 		VkDeviceSize offsets[] = { 0 };
+		// TODO: Consider adding a Bind() function in the buffer class.
 		vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);
 
 		if (m_hasIndexBuffer)
 		{
-			vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
 		}
 	}
 
@@ -93,40 +86,31 @@ namespace lve
 		m_vertexCount = static_cast<U32>(vertices.size());
 		ASSERT(m_vertexCount >= 3, "Failed to create vertex buffer. Vertex count must be at least 3!");
 
-		VkDeviceSize bufferSize = sizeof(vertices[0]) * m_vertexCount;
+		U32 vertexSize = sizeof(vertices[0]);
+		VkDeviceSize bufferSize = vertexSize * m_vertexCount;
 
-		// Create staging buffer.
-		VkBuffer stagingBuffer;
-		VkDeviceMemory stagingBufferMemory;
-
-		m_device.CreateBuffer(
-			bufferSize,
+		// Create staging buffer and it will be auto deleted.
+		LveBuffer stagingBuffer{
+			m_device,
+			vertexSize,
+			m_vertexCount,
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			stagingBuffer,
-			stagingBufferMemory);
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+		};
 
-		// Map the host memory on CPU to the device memory on GPU.
-		void* data;
-		vkMapMemory(m_device.GetDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
-		// memcpy will copy the vertices data memory to the memory on CPU.
-		// Since we use COHERENT flag, the CPU memory will automatically be flushed to update GPU memory.
-		memcpy(data, vertices.data(), static_cast<USize>(bufferSize));
-		vkUnmapMemory(m_device.GetDevice(), stagingBufferMemory);
+		stagingBuffer.Map();
+		stagingBuffer.WriteToBuffer((void*)vertices.data());
 
 		// Create vertex buffer.
-		m_device.CreateBuffer(
-			bufferSize,
+		m_vertexBuffer = MakeUniqueRef<LveBuffer>(
+			m_device,
+			vertexSize,
+			m_vertexCount,
 			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			m_vertexBuffer,
-			m_vertexBufferMemory);
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 		// Copy staging to vertex buffer.
-		m_device.CopyBuffer(stagingBuffer, m_vertexBuffer, bufferSize);
-
-		vkDestroyBuffer(m_device.GetDevice(), stagingBuffer, nullptr);
-		vkFreeMemory(m_device.GetDevice(), stagingBufferMemory, nullptr);
+		m_device.CopyBuffer(stagingBuffer.GetBuffer(), m_vertexBuffer->GetBuffer(), bufferSize);
 	}
 
 	void LveModel::CreateIndexBuffers(const std::vector<U32>& indices)
@@ -139,38 +123,31 @@ namespace lve
 			return;
 		}
 
-		VkDeviceSize bufferSize = sizeof(indices[0]) * m_indexCount;
+		U32 indexSize = sizeof(indices[0]);
+		VkDeviceSize bufferSize = indexSize * m_indexCount;
 
-		// Create staging buffer.
-		VkBuffer stagingBuffer;
-		VkDeviceMemory stagingBufferMemory;
-
-		m_device.CreateBuffer(
-			bufferSize,
+		// Create staging buffer and it will be auto deleted.
+		LveBuffer stagingBuffer{
+			m_device,
+			indexSize,
+			m_indexCount,
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			stagingBuffer,
-			stagingBufferMemory);
+		};
 
-		// Map the host memory on CPU to the device memory on GPU.
-		void* data;
-		vkMapMemory(m_device.GetDevice(), stagingBufferMemory, 0, bufferSize, 0, &data);
-		memcpy(data, indices.data(), static_cast<USize>(bufferSize));
-		vkUnmapMemory(m_device.GetDevice(), stagingBufferMemory);
+		stagingBuffer.Map();
+		stagingBuffer.WriteToBuffer((void*)indices.data());
 
 		// Create index buffer.
-		m_device.CreateBuffer(
-			bufferSize,
+		m_indexBuffer = MakeUniqueRef<LveBuffer>(
+			m_device,
+			indexSize,
+			m_indexCount,
 			VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			m_indexBuffer,
-			m_indexBufferMemory);
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-		// Copy staging to index buffer.
-		m_device.CopyBuffer(stagingBuffer, m_indexBuffer, bufferSize);
-
-		vkDestroyBuffer(m_device.GetDevice(), stagingBuffer, nullptr);
-		vkFreeMemory(m_device.GetDevice(), stagingBufferMemory, nullptr);
+		// Copy staging to vertex buffer.
+		m_device.CopyBuffer(stagingBuffer.GetBuffer(), m_indexBuffer->GetBuffer(), bufferSize);
 	}
 
 	UniqueRef<LveModel> LveModel::CreateCubeModel(LveDevice& device, Vector3 offset)

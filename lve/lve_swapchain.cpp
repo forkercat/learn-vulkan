@@ -339,9 +339,8 @@ namespace lve
 
 	void LveSwapchain::CreateFramebuffers()
 	{
-		PRINT("Creating %zu framebuffers...", m_swapchainFramebuffers.size());
-
 		m_swapchainFramebuffers.resize(m_swapchainImageViews.size());
+		PRINT("Creating %zu framebuffers...", m_swapchainFramebuffers.size());
 
 		for (USize i = 0; i < m_swapchainImageViews.size(); i++)
 		{

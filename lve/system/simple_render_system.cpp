@@ -57,13 +57,12 @@ namespace lve
 			MakeUniqueRef<LvePipeline>(m_device, "shaders/simple_shader.vert.spv", "shaders/simple_shader.frag.spv", pipelineConfig);
 	}
 
-	void SimpleRenderSystem::RenderGameObjects(VkCommandBuffer commandBuffer, std::vector<LveGameObject>& gameObjects,
-		const LveCamera& camera)
+	void SimpleRenderSystem::RenderGameObjects(FrameInfo& frameInfo, std::vector<LveGameObject>& gameObjects)
 	{
 		// Bind graphics pipeline.
-		m_pipeline->Bind(commandBuffer);
+		m_pipeline->Bind(frameInfo.commandBuffer);
 
-		Matrix4 projectionView = camera.GetProjection() * camera.GetView();
+		Matrix4 projectionView = frameInfo.camera.GetProjection() * frameInfo.camera.GetView();
 
 		// Render objects.
 		for (LveGameObject& gameObject : gameObjects)
@@ -74,11 +73,11 @@ namespace lve
 			push.transform = projectionView * modelMatrix;
 			push.normalMatrix = gameObject.transform.GetNormalMatrix(); // glm automatically converts from mat4 to mat3
 
-			vkCmdPushConstants(commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+			vkCmdPushConstants(frameInfo.commandBuffer, m_pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
 				sizeof(SimplePushConstantData), &push);
 
-			gameObject.model->Bind(commandBuffer);
-			gameObject.model->Draw(commandBuffer);
+			gameObject.model->Bind(frameInfo.commandBuffer);
+			gameObject.model->Draw(frameInfo.commandBuffer);
 		}
 	}
 

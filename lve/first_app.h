@@ -9,6 +9,7 @@
 #include "lve_window.h"
 #include "lve_device.h"
 #include "lve_renderer.h"
+#include "lve_buffer.h"
 #include "lve_game_object.h"
 #include "lve_camera.h"
 

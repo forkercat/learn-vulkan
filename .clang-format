@@ -30,12 +30,12 @@ BraceWrapping:
   IndentBraces: false
 BreakBeforeBinaryOperators: NonAssignment
 BreakBeforeBraces: Custom
-BreakInheritanceList: AfterColon
+#BreakInheritanceList: AfterColon
 BreakBeforeTernaryOperators: true
-BreakConstructorInitializers: BeforeComma
+#BreakConstructorInitializers: BeforeComma
 BreakStringLiterals: false
 ColumnLimit: 0
-ConstructorInitializerAllOnOneLineOrOnePerLine: true
+#ConstructorInitializerAllOnOneLineOrOnePerLine: true
 Cpp11BracedListStyle: false
 EmptyLineBeforeAccessModifier: LogicalBlock
 IndentCaseBlocks: false
@@ -48,3 +48,10 @@ SortIncludes: false
 SpaceBeforeCaseColon: false
 TabWidth: 4
 UseTab: Always
+
+# Custom
+MaxEmptyLinesToKeep: 1
+#BreakInheritanceList: BeforeColon
+#BreakConstructorInitializers: BeforeColon
+#PackConstructorInitializers: NextLineOnly
+#ConstructorInitializerAllOnOneLineOrOnePerLine: false
