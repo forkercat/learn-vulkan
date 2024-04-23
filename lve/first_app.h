@@ -45,7 +45,7 @@ namespace lve
 		// Note: Order of declarations matters.
 		UniqueRef<LveDescriptorPool> m_globalDescriptorPool{};
 
-		std::vector<LveGameObject> m_gameObjects;
+		LveGameObject::Map m_gameObjects;
 	};
 
 } // namespace lve

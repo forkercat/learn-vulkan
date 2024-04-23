@@ -56,7 +56,7 @@ namespace lve
 		// Descriptors
 		UniqueRef<LveDescriptorSetLayout> globalSetLayout =
 			LveDescriptorSetLayout::Builder(m_device)
-				.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT)
+				.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
 				.Build();
 
 		std::vector<VkDescriptorSet> globalDescriptorSets(LveSwapchain::MAX_FRAMES_IN_FLIGHT); // one set per frame
@@ -107,8 +107,9 @@ namespace lve
 					.frameIndex = frameIndex,
 					.frameTime = frameTime,
 					.commandBuffer = commandBuffer,
+					.globalDescriptorSet = globalDescriptorSets[frameIndex],
 					.camera = camera,
-					.globalDescriptorSet = globalDescriptorSets[frameIndex]
+					.gameObjects = m_gameObjects
 				};
 
 				// Update
@@ -130,7 +131,7 @@ namespace lve
 				// - Post processing...
 				m_renderer.BeginSwapchainRenderPass(commandBuffer);
 
-				simpleRenderSystem.RenderGameObjects(frameInfo, m_gameObjects);
+				simpleRenderSystem.RenderGameObjects(frameInfo);
 
 				m_renderer.EndSwapchainRenderPass(commandBuffer);
 				m_renderer.EndFrame();
@@ -165,9 +166,9 @@ namespace lve
 		gameObjectQuad.transform.translation = { 0.0f, 0.5f, 0.0f };
 		gameObjectQuad.transform.scale = { 3.0f, 1.0f, 3.0f };
 
-		m_gameObjects.push_back(std::move(gameObject));
-		m_gameObjects.push_back(std::move(gameObject2));
-		m_gameObjects.push_back(std::move(gameObjectQuad));
+		m_gameObjects.emplace(gameObject.GetId(), std::move(gameObject));
+		m_gameObjects.emplace(gameObject2.GetId(), std::move(gameObject2));
+		m_gameObjects.emplace(gameObjectQuad.GetId(), std::move(gameObjectQuad));
 	}
 
 } // namespace lve

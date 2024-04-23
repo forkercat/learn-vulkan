@@ -60,7 +60,7 @@ namespace lve
 			MakeUniqueRef<LvePipeline>(m_device, "shaders/simple_shader.vert.spv", "shaders/simple_shader.frag.spv", pipelineConfig);
 	}
 
-	void SimpleRenderSystem::RenderGameObjects(FrameInfo& frameInfo, std::vector<LveGameObject>& gameObjects)
+	void SimpleRenderSystem::RenderGameObjects(FrameInfo& frameInfo)
 	{
 		// Bind graphics pipeline.
 		m_pipeline->Bind(frameInfo.commandBuffer);
@@ -77,8 +77,10 @@ namespace lve
 			nullptr);
 
 		// Render objects.
-		for (LveGameObject& gameObject : gameObjects)
+		for (auto& kv : frameInfo.gameObjects)
 		{
+			auto& gameObject = kv.second;
+
 			SimplePushConstantData push{};
 			push.modelMatrix = gameObject.transform.GetTransform();
 			push.normalMatrix = gameObject.transform.GetNormalMatrix(); // glm automatically converts from mat4 to mat3
