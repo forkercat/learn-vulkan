@@ -5,6 +5,7 @@
 #include "first_app.h"
 
 #include "lve/system/simple_render_system.h"
+#include "lve/system/point_light_system.h"
 #include "lve/system/rainbow_system.h"
 #include "lve/keyboard_movement_controller.h"
 
@@ -14,7 +15,8 @@ namespace lve
 {
 	struct GlobalUbo
 	{
-		Matrix4 projectionView{ 1.0f };
+		Matrix4 projection{ 1.0f };
+		Matrix4 view{ 1.0f };
 		Vector4 ambientLightColor{ 1.0f, 1.0f, 1.0f, 0.02f }; // w is intensity
 		Vector3 lightPosition{ -1.0f };
 		alignas(16) Vector4 lightColor{ 1.0f }; // w is intensity
@@ -72,6 +74,8 @@ namespace lve
 		// Render system, camera, and controller
 		SimpleRenderSystem simpleRenderSystem(
 			m_device, m_renderer.GetSwapchainRenderPass(), globalSetLayout->GetDescriptorSetLayout());
+		PointLightSystem pointLightSystem(
+			m_device, m_renderer.GetSwapchainRenderPass(), globalSetLayout->GetDescriptorSetLayout());
 		RainbowSystem rainbowSystem(0.4f);
 
 		LveCamera camera;
@@ -114,7 +118,8 @@ namespace lve
 
 				// Update
 				GlobalUbo ubo{};
-				ubo.projectionView = camera.GetProjection() * camera.GetView();
+				ubo.projection = camera.GetProjection();
+				ubo.view = camera.GetView();
 				uboBuffers[frameInfo.frameIndex]->WriteToBuffer(&ubo);
 				uboBuffers[frameInfo.frameIndex]->Flush();
 
@@ -132,6 +137,7 @@ namespace lve
 				m_renderer.BeginSwapchainRenderPass(commandBuffer);
 
 				simpleRenderSystem.RenderGameObjects(frameInfo);
+				pointLightSystem.Render(frameInfo);
 
 				m_renderer.EndSwapchainRenderPass(commandBuffer);
 				m_renderer.EndFrame();

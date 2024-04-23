@@ -14,6 +14,7 @@ PRIVATE
 	lve_camera.cpp
 	keyboard_movement_controller.cpp
 	system/simple_render_system.cpp
+	system/point_light_system.cpp
 	first_app.cpp
 	main.cpp
 PUBLIC
@@ -31,6 +32,7 @@ PUBLIC
 	lve_utils.h
 	keyboard_movement_controller.h
 	system/simple_render_system.h
+	system/point_light_system.h
 	system/rainbow_system.h
 	first_app.h
 )
