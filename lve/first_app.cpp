@@ -15,7 +15,9 @@ namespace lve
 	struct GlobalUbo
 	{
 		Matrix4 projectionView{ 1.0f };
-		Vector3 lightDirection = MathOp::Normalize(Vector3{ 1.0f, -3.0f, -1.0f });
+		Vector4 ambientLightColor{ 1.0f, 1.0f, 1.0f, 0.02f }; // w is intensity
+		Vector3 lightPosition{ -1.0f };
+		alignas(16) Vector4 lightColor{ 1.0f }; // w is intensity
 	};
 
 	FirstApp::FirstApp()
@@ -76,6 +78,7 @@ namespace lve
 		camera.SetViewTarget(Vector3(-1.0f, -2.0f, 2.0f), Vector3(0.0f, 0.0f, 2.5f));
 
 		LveGameObject viewerObject = LveGameObject::CreateGameObject();
+		viewerObject.transform.translation.z = -2.5;
 		KeyboardMovementController cameraController{};
 
 		std::chrono::time_point currentTime = std::chrono::high_resolution_clock::now();
@@ -93,7 +96,7 @@ namespace lve
 			camera.SetViewYXZ(viewerObject.transform.translation, viewerObject.transform.rotation);
 
 			F32 aspect = m_renderer.GetAspectRatio();
-			camera.SetPerspectiveProjection(MathOp::Radians(50.f), aspect, 0.1f, 10.f);
+			camera.SetPerspectiveProjection(MathOp::Radians(50.f), aspect, 0.1f, 100.f);
 
 			// Could be nullptr if, for example, the swapchain needs to be recreated.
 			if (VkCommandBuffer commandBuffer = m_renderer.BeginFrame())
@@ -145,19 +148,26 @@ namespace lve
 		// Model
 		UniqueRef<LveModel> smoothModel = LveModel::CreateModelFromFile(m_device, "models/smooth_vase.obj");
 		UniqueRef<LveModel> flatModel = LveModel::CreateModelFromFile(m_device, "models/flat_vase.obj");
+		UniqueRef<LveModel> quadModel = LveModel::CreateModelFromFile(m_device, "models/quad.obj");
 
 		LveGameObject gameObject = LveGameObject::CreateGameObject();
 		gameObject.model = std::move(smoothModel);
-		gameObject.transform.translation = { -0.5f, 0.0f, 3.0f };
+		gameObject.transform.translation = { -0.5f, 0.5f, 0.0f };
 		gameObject.transform.scale = Vector3(2.0f);
 
 		LveGameObject gameObject2 = LveGameObject::CreateGameObject();
 		gameObject2.model = std::move(flatModel);
-		gameObject2.transform.translation = { 0.5f, 0.0f, 3.0f };
+		gameObject2.transform.translation = { 0.5f, 0.5f, 0.0f };
 		gameObject2.transform.scale = Vector3(2.0f);
+
+		LveGameObject gameObjectQuad = LveGameObject::CreateGameObject();
+		gameObjectQuad.model = std::move(quadModel);
+		gameObjectQuad.transform.translation = { 0.0f, 0.5f, 0.0f };
+		gameObjectQuad.transform.scale = { 3.0f, 1.0f, 3.0f };
 
 		m_gameObjects.push_back(std::move(gameObject));
 		m_gameObjects.push_back(std::move(gameObject2));
+		m_gameObjects.push_back(std::move(gameObjectQuad));
 	}
 
 } // namespace lve
